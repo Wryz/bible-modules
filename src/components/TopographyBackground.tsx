@@ -9,19 +9,16 @@ export const TopographyBackground: React.FC = () => {
   const theme = useTheme();
   const isDark = theme.themeName === 'dark';
   const fill = isDark ? '#FFFFFF' : '#000000';
+  const opacity = isDark ? 0.05 : 0.05;
 
   return (
-    <View style={styles.container} pointerEvents="none">
+    <View style={[styles.container, {opacity}]} pointerEvents="none">
       <TopographySvg
         width={SCREEN_WIDTH}
         height={SCREEN_HEIGHT}
         viewBox="0 0 600 600"
         preserveAspectRatio="xMidYMid slice"
         fill={fill}
-        style={[styles.svg, {
-          filter: `brightness(${isDark ? 0.8 : 0})`,
-          opacity: isDark ? 0.3 : 0.18,
-        }]}
       />
     </View>
   );
