@@ -1,0 +1,65 @@
+{
+  "books": [
+    {
+      "name": "Genesis",
+      "abbreviation": "Gen",
+      "chapters": [
+        {
+          "chapterNumber": 1,
+          "verses": [
+            {
+              "verseNumber": 1,
+              "text": "In the beginning God created the heavens and the earth."
+            },
+            {
+              "verseNumber": 2,
+              "text": "Now the earth was formless and empty, darkness was over the surface of the deep, and the Spirit of God was hovering over the waters."
+            },
+            {
+              "verseNumber": 3,
+              "text": "And God said, \"Let there be light,\" and there was light."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "John",
+      "abbreviation": "John",
+      "chapters": [
+        {
+          "chapterNumber": 3,
+          "verses": [
+            {
+              "verseNumber": 16,
+              "text": "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life."
+            },
+            {
+              "verseNumber": 17,
+              "text": "For God did not send his Son into the world to condemn the world, but to save the world through him."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Psalms",
+      "abbreviation": "Ps",
+      "chapters": [
+        {
+          "chapterNumber": 23,
+          "verses": [
+            {
+              "verseNumber": 1,
+              "text": "The LORD is my shepherd, I lack nothing."
+            },
+            {
+              "verseNumber": 4,
+              "text": "Even though I walk through the darkest valley, I will fear no evil, for you are with me; your rod and your staff, they comfort me."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

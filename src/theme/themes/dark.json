@@ -1,0 +1,22 @@
+{
+  "name": "dark",
+  "colors": {
+    "primary": "#5B8FF9",
+    "primaryDark": "#3D6FD9",
+    "secondary": "#7C7CE8",
+    "background": "#121212",
+    "surface": "#1E1E1E",
+    "surfaceElevated": "#2A2A2A",
+    "text": "#F5F5F7",
+    "textSecondary": "#D1D1D6",
+    "textTertiary": "#98989D",
+    "border": "#333333",
+    "borderLight": "#252525",
+    "error": "#FF6B6B",
+    "success": "#4ECDC4",
+    "warning": "#FFD93D",
+    "tabBarBackground": "#1E1E1E",
+    "tabBarActive": "#5B8FF9",
+    "tabBarInactive": "#6E6E73"
+  }
+}

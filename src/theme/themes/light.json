@@ -1,0 +1,22 @@
+{
+  "name": "light",
+  "colors": {
+    "primary": "#007AFF",
+    "primaryDark": "#0051D5",
+    "secondary": "#5856D6",
+    "background": "#F5F5F5",
+    "surface": "#FFFFFF",
+    "surfaceElevated": "#FFFFFF",
+    "text": "#000000",
+    "textSecondary": "#333333",
+    "textTertiary": "#666666",
+    "border": "#E0E0E0",
+    "borderLight": "#F0F0F0",
+    "error": "#FF3B30",
+    "success": "#34C759",
+    "warning": "#FF9500",
+    "tabBarBackground": "#FFFFFF",
+    "tabBarActive": "#007AFF",
+    "tabBarInactive": "#999999"
+  }
+}

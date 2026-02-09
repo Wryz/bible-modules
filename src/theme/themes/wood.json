@@ -1,0 +1,22 @@
+{
+  "name": "wood",
+  "colors": {
+    "primary": "#8B4513",
+    "primaryDark": "#654321",
+    "secondary": "#A0522D",
+    "background": "#F5E6D3",
+    "surface": "#FFF8DC",
+    "surfaceElevated": "#FDF5E6",
+    "text": "#3E2723",
+    "textSecondary": "#5D4037",
+    "textTertiary": "#8D6E63",
+    "border": "#D7CCC8",
+    "borderLight": "#EFEBE9",
+    "error": "#D32F2F",
+    "success": "#388E3C",
+    "warning": "#F57C00",
+    "tabBarBackground": "#FFF8DC",
+    "tabBarActive": "#8B4513",
+    "tabBarInactive": "#BCAAA4"
+  }
+}
