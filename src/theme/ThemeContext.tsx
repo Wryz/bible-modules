@@ -1,4 +1,4 @@
-import React, {createContext, useState, useMemo, useEffect, ReactNode} from 'react';
+import React, {createContext, useState, useMemo, useEffect, useCallback, ReactNode} from 'react';
 import {ThemeName, loadTheme} from './themeLoader';
 import {ColorPalette} from './types';
 import {spacing, safeArea, borderRadius} from './spacing';
@@ -46,15 +46,21 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return loadThemeSync(themeName || 'dark');
   });
 
-  // Load custom colors on mount
+  // Load saved theme and custom colors on mount
   useEffect(() => {
-    const loadCustomColors = async () => {
-      const saved = await StorageService.getCustomColors();
-      if (saved) {
-        setCustomColorsState(saved);
+    const loadSaved = async () => {
+      const [savedTheme, savedColors] = await Promise.all([
+        StorageService.getThemeName(),
+        StorageService.getCustomColors(),
+      ]);
+      if (savedTheme) {
+        setThemeName(savedTheme);
+      }
+      if (savedColors) {
+        setCustomColorsState(savedColors);
       }
     };
-    loadCustomColors();
+    loadSaved();
   }, []);
 
   // Update theme colors when theme name or custom colors change
@@ -62,21 +68,28 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     const updateColors = async () => {
       const themeColors = await loadTheme(themeName, customColors);
       setColors(themeColors);
-      // Sync theme name and colors to widget
-      try {
-        const WidgetDataManager = require('../native/WidgetDataManager').default;
-        if (WidgetDataManager.updateThemeName) {
-          await WidgetDataManager.updateThemeName(themeName);
+      // Sync theme name and colors to widget (non-blocking)
+      // Defer widget updates to avoid blocking UI on initial load
+      requestAnimationFrame(() => {
+        try {
+          const WidgetDataManager = require('../native/WidgetDataManager').default;
+          if (WidgetDataManager.updateThemeName) {
+            WidgetDataManager.updateThemeName(themeName).catch((error: Error) => {
+              console.error('Error syncing theme name to widget:', error);
+            });
+          }
+          if (WidgetDataManager.updateThemeColors) {
+            // Always sync the actual primary color being used (from theme or custom)
+            WidgetDataManager.updateThemeColors(
+              themeColors.primary || null,
+            ).catch((error: Error) => {
+              console.error('Error syncing theme colors to widget:', error);
+            });
+          }
+        } catch (error) {
+          console.error('Error syncing theme to widget:', error);
         }
-        if (WidgetDataManager.updateThemeColors) {
-          // Always sync the actual primary color being used (from theme or custom)
-          await WidgetDataManager.updateThemeColors(
-            themeColors.primary || null,
-          );
-        }
-      } catch (error) {
-        console.error('Error syncing theme to widget:', error);
-      }
+      });
     };
     updateColors();
   }, [themeName, customColors]);
@@ -102,15 +115,22 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     setCustomColorsState(newColors);
   };
 
+  const setTheme = useCallback((name: ThemeName) => {
+    setThemeName(name);
+    StorageService.saveThemeName(name).catch(error => {
+      console.error('Error saving theme name:', error);
+    });
+  }, []);
+
   const contextValue = useMemo(
     () => ({
       theme,
       themeName,
-      setTheme: setThemeName,
+      setTheme,
       customColors,
       setCustomColors,
     }),
-    [theme, themeName, customColors],
+    [theme, themeName, customColors, setTheme],
   );
 
   return (

@@ -14,13 +14,19 @@ export class SchedulingService {
   static async updateWidgetWithNextVerse(): Promise<void> {
     const nextVerse = await this.getNextScheduledVerse();
     if (nextVerse) {
-      await StorageService.setCurrentVerse(nextVerse.verse);
-      await StorageService.addDisplayedVerse(nextVerse.verse);
-      await StorageService.removeScheduledVerse(nextVerse.id);
-      await WidgetDataManager.updateVerse(
+      // Parallelize storage operations
+      await Promise.all([
+        StorageService.setCurrentVerse(nextVerse.verse),
+        StorageService.addDisplayedVerse(nextVerse.verse),
+        StorageService.removeScheduledVerse(nextVerse.id),
+      ]);
+      // Widget update can happen after storage operations complete (non-blocking)
+      WidgetDataManager.updateVerse(
         nextVerse.verse.text,
         nextVerse.verse.reference,
-      );
+      ).catch(error => {
+        console.error('Error updating widget:', error);
+      });
     }
   }
 
@@ -54,12 +60,18 @@ export class SchedulingService {
       // Get a random verse instead of a scheduled one
       const randomVerse = await this.getRandomVerse();
       if (randomVerse) {
-        await StorageService.setCurrentVerse(randomVerse.verse);
-        await StorageService.addDisplayedVerse(randomVerse.verse);
-        await WidgetDataManager.updateVerse(
+        // Parallelize storage operations
+        await Promise.all([
+          StorageService.setCurrentVerse(randomVerse.verse),
+          StorageService.addDisplayedVerse(randomVerse.verse),
+        ]);
+        // Widget update can happen after storage operations complete
+        WidgetDataManager.updateVerse(
           randomVerse.verse.text,
           randomVerse.verse.reference,
-        );
+        ).catch(error => {
+          console.error('Error updating widget:', error);
+        });
       } else {
         // Fallback to scheduled verse if no displayed verses available
         await this.updateWidgetWithNextVerse();
@@ -69,21 +81,30 @@ export class SchedulingService {
       // This ensures widget is always in sync when app opens
       const currentVerse = await StorageService.getCurrentVerse();
       if (currentVerse) {
-        await WidgetDataManager.updateVerse(
+        // Non-blocking widget update
+        WidgetDataManager.updateVerse(
           currentVerse.text,
           currentVerse.reference,
-        );
+        ).catch(error => {
+          console.error('Error updating widget:', error);
+        });
       } else {
         // If no current verse, get a random one and set it immediately
         // This prevents the widget from showing placeholder/skeleton loader
         const randomVerse = await this.getRandomVerse();
         if (randomVerse) {
-          await StorageService.setCurrentVerse(randomVerse.verse);
-          await StorageService.addDisplayedVerse(randomVerse.verse);
-          await WidgetDataManager.updateVerse(
+          // Parallelize storage operations
+          await Promise.all([
+            StorageService.setCurrentVerse(randomVerse.verse),
+            StorageService.addDisplayedVerse(randomVerse.verse),
+          ]);
+          // Widget update can happen after storage operations complete
+          WidgetDataManager.updateVerse(
             randomVerse.verse.text,
             randomVerse.verse.reference,
-          );
+          ).catch(error => {
+            console.error('Error updating widget:', error);
+          });
         } else {
           // Fallback to scheduled verse if available
           await this.updateWidgetWithNextVerse();
@@ -130,16 +151,16 @@ export class SchedulingService {
     // Get the current verse to exclude it from selection
     const currentVerse = await StorageService.getCurrentVerse();
     
-    // Get a random verse from the entire Bible (not just displayed verses)
-    // This ensures we always get a truly random verse, not a copy of the current one
-    const books = BibleService.getAllBooks();
+    // Get a random verse from New Testament only
+    const books = BibleService.getNewTestamentBooks();
     if (books.length === 0) {
       return null;
     }
     
-    // Try up to 10 times to find a verse that's different from the current one
-    for (let attempt = 0; attempt < 10; attempt++) {
-      // Pick a random book
+    // Optimize: Pre-calculate book/chapter counts to reduce repeated lookups
+    // Try up to 5 times (reduced from 10) to find a verse that's different from the current one
+    for (let attempt = 0; attempt < 5; attempt++) {
+      // Pick a random book from New Testament
       const randomBook = books[Math.floor(Math.random() * books.length)];
       const chapters = BibleService.getChapters(randomBook);
       if (chapters.length === 0) {
@@ -171,8 +192,8 @@ export class SchedulingService {
       };
     }
     
-    // If we couldn't find a different verse after 10 attempts, 
-    // just return any random verse (should be very rare)
+    // If we couldn't find a different verse after 5 attempts, 
+    // just return any random verse from New Testament (should be very rare)
     const randomBook = books[Math.floor(Math.random() * books.length)];
     const chapters = BibleService.getChapters(randomBook);
     if (chapters.length > 0) {

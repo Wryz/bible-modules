@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,8 @@ import {
   Modal,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Platform,
   Animated,
+  TextInput,
 } from 'react-native';
 import {BibleVerse} from '../types';
 import {useTheme} from '../theme/useTheme';
@@ -34,6 +34,9 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
   const styles = createStyles(theme);
   const slideAnim = useRef(new Animated.Value(visible ? 0 : 1)).current;
   const backdropOpacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const [showDateTimePicker, setShowDateTimePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState({hours: 9, minutes: 0});
 
   useEffect(() => {
     if (visible) {
@@ -73,16 +76,50 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
     outputRange: [0, 300],
   });
 
-  const handleSchedule = async (daysOffset: number = 0) => {
+  // Check if scheduling for today would be past due
+  const isTodayPastDue = () => {
+    const todayAt9AM = new Date();
+    todayAt9AM.setHours(9, 0, 0, 0);
+    return todayAt9AM.getTime() <= new Date().getTime();
+  };
+
+  const handleSchedule = async (daysOffset: number = 0, customDate?: Date) => {
     if (!verse) return;
 
-    const scheduledDate = new Date();
-    scheduledDate.setDate(scheduledDate.getDate() + daysOffset);
-    scheduledDate.setHours(9, 0, 0, 0); // Default to 9 AM
+    let scheduledDate: Date;
+    if (customDate) {
+      scheduledDate = customDate;
+    } else {
+      scheduledDate = new Date();
+      scheduledDate.setDate(scheduledDate.getDate() + daysOffset);
+      scheduledDate.setHours(9, 0, 0, 0); // Default to 9 AM
+    }
 
     await scheduleVerse(verse, scheduledDate);
+    // Pass the scheduled verse to the callback so HomeScreen can update immediately
     onScheduleComplete?.();
     onClose();
+    setShowDateTimePicker(false);
+  };
+
+  const handleCustomSchedule = () => {
+    setShowDateTimePicker(true);
+  };
+
+  const handleConfirmCustomSchedule = async () => {
+    if (!verse) return;
+
+    const scheduledDate = new Date(selectedDate);
+    scheduledDate.setHours(selectedTime.hours, selectedTime.minutes, 0, 0);
+    
+    // Ensure the date is in the future
+    const now = new Date();
+    if (scheduledDate <= now) {
+      // If selected date/time is in the past, schedule for tomorrow at the selected time
+      scheduledDate.setDate(scheduledDate.getDate() + 1);
+    }
+
+    await handleSchedule(0, scheduledDate);
   };
 
   const handleCopy = async () => {
@@ -135,9 +172,18 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
 
               <View style={styles.optionsContainer}>
                 <TouchableOpacity
-                  style={styles.option}
-                  onPress={() => handleSchedule(0)}>
-                  <Text style={styles.optionText}>Schedule for Today</Text>
+                  style={[
+                    styles.option,
+                    isTodayPastDue() && styles.optionDisabled
+                  ]}
+                  onPress={() => !isTodayPastDue() && handleSchedule(0)}
+                  disabled={isTodayPastDue()}>
+                  <Text style={[
+                    styles.optionText,
+                    isTodayPastDue() && styles.optionTextDisabled
+                  ]}>
+                    Schedule for Today
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -150,6 +196,12 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
                   style={styles.option}
                   onPress={() => handleSchedule(7)}>
                   <Text style={styles.optionText}>Schedule for Next Week</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.option}
+                  onPress={handleCustomSchedule}>
+                  <Text style={styles.optionText}>Schedule for Specific Date & Time</Text>
                 </TouchableOpacity>
 
                 <View style={styles.divider} />
@@ -168,6 +220,105 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
           </TouchableWithoutFeedback>
         </Animated.View>
       </TouchableWithoutFeedback>
+
+      {/* Date/Time Picker Modal */}
+      <Modal
+        visible={showDateTimePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDateTimePicker(false)}>
+        <TouchableWithoutFeedback onPress={() => setShowDateTimePicker(false)}>
+          <View style={styles.dateTimePickerOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.dateTimePickerContainer}>
+                <Text style={styles.dateTimePickerTitle}>Select Date & Time</Text>
+                
+                <View style={styles.dateTimeSection}>
+                  <Text style={styles.dateTimeLabel}>Date</Text>
+                  <View style={styles.datePickerRow}>
+                    <TouchableOpacity
+                      style={styles.dateButton}
+                      onPress={() => {
+                        const newDate = new Date(selectedDate);
+                        newDate.setDate(newDate.getDate() - 1);
+                        setSelectedDate(newDate);
+                      }}>
+                      <Text style={styles.dateButtonText}>−</Text>
+                    </TouchableOpacity>
+                    <View style={styles.dateDisplay}>
+                      <Text style={styles.dateDisplayText}>
+                        {selectedDate.toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.dateButton}
+                      onPress={() => {
+                        const newDate = new Date(selectedDate);
+                        newDate.setDate(newDate.getDate() + 1);
+                        setSelectedDate(newDate);
+                      }}>
+                      <Text style={styles.dateButtonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.dateTimeSection}>
+                  <Text style={styles.dateTimeLabel}>Time</Text>
+                  <View style={styles.timeInputRow}>
+                    <TextInput
+                      style={styles.timeInput}
+                      placeholder="HH"
+                      value={selectedTime.hours.toString().padStart(2, '0')}
+                      onChangeText={(text) => {
+                        const hours = parseInt(text, 10);
+                        if (!isNaN(hours) && hours >= 0 && hours <= 23) {
+                          setSelectedTime({...selectedTime, hours});
+                        }
+                      }}
+                      keyboardType="numeric"
+                      maxLength={2}
+                      placeholderTextColor={theme.colors.textTertiary}
+                    />
+                    <Text style={styles.timeSeparator}>:</Text>
+                    <TextInput
+                      style={styles.timeInput}
+                      placeholder="MM"
+                      value={selectedTime.minutes.toString().padStart(2, '0')}
+                      onChangeText={(text) => {
+                        const minutes = parseInt(text, 10);
+                        if (!isNaN(minutes) && minutes >= 0 && minutes <= 59) {
+                          setSelectedTime({...selectedTime, minutes});
+                        }
+                      }}
+                      keyboardType="numeric"
+                      maxLength={2}
+                      placeholderTextColor={theme.colors.textTertiary}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.dateTimePickerButtons}>
+                  <TouchableOpacity
+                    style={[styles.dateTimeButton, styles.cancelDateTimeButton]}
+                    onPress={() => setShowDateTimePicker(false)}>
+                    <Text style={styles.cancelDateTimeText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.dateTimeButton, styles.confirmDateTimeButton]}
+                    onPress={handleConfirmCustomSchedule}>
+                    <Text style={styles.confirmDateTimeText}>Schedule</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </Modal>
   );
 };
@@ -229,6 +380,12 @@ const createStyles = (theme: any) =>
       fontWeight: theme.typography.weights.medium,
       textAlign: 'center',
     },
+    optionDisabled: {
+      opacity: 0.4,
+    },
+    optionTextDisabled: {
+      color: theme.colors.textTertiary,
+    },
     divider: {
       height: 1,
       backgroundColor: theme.colors.border,
@@ -243,5 +400,117 @@ const createStyles = (theme: any) =>
       color: theme.colors.textSecondary,
       fontWeight: theme.typography.weights.medium,
       textAlign: 'center',
+    },
+    dateTimePickerOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: theme.spacing.lg,
+    },
+    dateTimePickerContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: theme.borderRadius.xl,
+      padding: theme.spacing.xl,
+      width: '100%',
+      maxWidth: 400,
+    },
+    dateTimePickerTitle: {
+      fontSize: theme.typography.sizes.lg,
+      fontWeight: theme.typography.weights.bold,
+      color: theme.colors.text,
+      textAlign: 'center',
+      marginBottom: theme.spacing.xl,
+    },
+    dateTimeSection: {
+      marginBottom: theme.spacing.lg,
+    },
+    dateTimeLabel: {
+      fontSize: theme.typography.sizes.sm,
+      fontWeight: theme.typography.weights.semibold,
+      color: theme.colors.textSecondary,
+      marginBottom: theme.spacing.sm,
+      textTransform: 'uppercase',
+      letterSpacing: theme.typography.letterSpacing.wide,
+    },
+    datePickerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: theme.spacing.md,
+    },
+    dateButton: {
+      width: 44,
+      height: 44,
+      borderRadius: theme.borderRadius.md,
+      backgroundColor: theme.colors.surfaceElevated,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    dateButtonText: {
+      fontSize: 24,
+      color: theme.colors.text,
+      fontWeight: theme.typography.weights.bold,
+      lineHeight: 24,
+    },
+    dateDisplay: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: theme.spacing.md,
+    },
+    dateDisplayText: {
+      fontSize: theme.typography.sizes.body,
+      color: theme.colors.text,
+      fontWeight: theme.typography.weights.medium,
+    },
+    timeInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+    },
+    timeInput: {
+      width: 60,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: theme.borderRadius.md,
+      padding: theme.spacing.md,
+      fontSize: theme.typography.sizes.body,
+      color: theme.colors.text,
+      backgroundColor: theme.colors.background,
+      textAlign: 'center',
+    },
+    timeSeparator: {
+      fontSize: theme.typography.sizes.lg,
+      color: theme.colors.text,
+      fontWeight: theme.typography.weights.bold,
+    },
+    dateTimePickerButtons: {
+      flexDirection: 'row',
+      gap: theme.spacing.md,
+      marginTop: theme.spacing.lg,
+    },
+    dateTimeButton: {
+      flex: 1,
+      paddingVertical: theme.spacing.md,
+      borderRadius: theme.borderRadius.md,
+      alignItems: 'center',
+    },
+    cancelDateTimeButton: {
+      backgroundColor: theme.colors.surfaceElevated,
+    },
+    confirmDateTimeButton: {
+      backgroundColor: theme.colors.primary,
+    },
+    cancelDateTimeText: {
+      fontSize: theme.typography.sizes.body,
+      color: theme.colors.text,
+      fontWeight: theme.typography.weights.medium,
+    },
+    confirmDateTimeText: {
+      fontSize: theme.typography.sizes.body,
+      color: '#FFFFFF',
+      fontWeight: theme.typography.weights.semibold,
     },
   });

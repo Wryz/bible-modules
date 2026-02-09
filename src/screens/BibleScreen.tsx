@@ -17,6 +17,7 @@ import {ChapterReader} from '../components/ChapterReader';
 import {ChapterDrawer} from '../components/ChapterDrawer';
 import {SearchIcon} from '../components/icons/SearchIcon';
 import {CloseIcon} from '../components/icons/CloseIcon';
+import {TopographyBackground} from '../components/TopographyBackground';
 
 export const BibleScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -143,6 +144,7 @@ export const BibleScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <TopographyBackground />
       {/* Tap area to open drawer when closed - wider area for better UX */}
       {!drawerVisible && (
         <TouchableOpacity
@@ -256,6 +258,7 @@ export const BibleScreen: React.FC = () => {
 const createStyles = (theme: any, insets: any) =>
   StyleSheet.create({
     container: {
+      position: 'relative',
       flex: 1,
       backgroundColor: theme.colors.background,
     },

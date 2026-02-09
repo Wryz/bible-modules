@@ -6,16 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {WidgetSettings} from '../types';
 import {StorageService} from '../services/storage';
 import {SchedulingService} from '../services/schedulingService';
 import {useTheme, useThemeContext} from '../theme/useTheme';
-import {getShadowOpacity, isDarkColor} from '../theme/utils';
+import {getShadowOpacity, withOpacity} from '../theme/utils';
 import {ThemeName, getAvailableThemes} from '../theme/themeLoader';
 import {ColorPicker} from '../components/ColorPicker';
+import {TopographyBackground} from '../components/TopographyBackground';
 
 export const SettingsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -26,7 +26,6 @@ export const SettingsScreen: React.FC = () => {
   });
   const [customHours, setCustomHours] = useState('24');
   const [primaryColorPickerVisible, setPrimaryColorPickerVisible] = useState(false);
-  const isInitialLoad = useRef(true);
   const isInitialLoad = useRef(true);
 
   useEffect(() => {
@@ -54,7 +53,7 @@ export const SettingsScreen: React.FC = () => {
     };
     
     saveSettings();
-  }, [settings.refreshFrequency, customHours]);
+  }, [settings, customHours]);
 
   const loadSettings = async () => {
     const loaded = await StorageService.getWidgetSettings();
@@ -69,9 +68,11 @@ export const SettingsScreen: React.FC = () => {
   const styles = createStyles(theme, insets);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}>
+    <View style={styles.wrapper}>
+      <TopographyBackground />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Widget Refresh Frequency</Text>
         <Text style={styles.sectionDescription}>
@@ -232,17 +233,21 @@ export const SettingsScreen: React.FC = () => {
         onClose={() => setPrimaryColorPickerVisible(false)}
         title="Select Primary Color"
       />
-
-
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
 const createStyles = (theme: any, insets: any) =>
   StyleSheet.create({
+    wrapper: {
+      flex: 1,
+      position: 'relative',
+      backgroundColor: theme.colors.background,
+    },
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      backgroundColor: 'transparent',
     },
     contentContainer: {
       paddingTop: insets.top + theme.safeArea.topPadding,
@@ -290,9 +295,7 @@ const createStyles = (theme: any, insets: any) =>
     },
     optionSelected: {
       borderColor: theme.colors.primary,
-      backgroundColor: isDarkColor(theme.colors.background)
-        ? theme.colors.surfaceElevated
-        : '#E3F2FD',
+      backgroundColor: withOpacity(theme.colors.primary, 0.2),
       borderWidth: 2,
     },
     optionText: {

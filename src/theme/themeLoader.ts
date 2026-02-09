@@ -1,6 +1,6 @@
 import {ColorPalette} from './types';
 
-export type ThemeName = 'light' | 'dark' | 'wood';
+export type ThemeName = 'light' | 'dark';
 
 export interface ThemeData {
   name: ThemeName;
@@ -10,12 +10,10 @@ export interface ThemeData {
 // Import theme JSON files
 import lightTheme from './themes/light.json';
 import darkTheme from './themes/dark.json';
-import woodTheme from './themes/wood.json';
 
 const themes: Record<ThemeName, ThemeData> = {
   light: lightTheme as ThemeData,
   dark: darkTheme as ThemeData,
-  wood: woodTheme as ThemeData,
 };
 
 export const getTheme = (themeName: ThemeName): ThemeData => {

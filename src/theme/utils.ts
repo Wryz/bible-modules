@@ -27,3 +27,14 @@ export const isDarkColor = (hexColor: string): boolean => {
 export const getShadowOpacity = (backgroundColor: string): number => {
   return isDarkColor(backgroundColor) ? 0.3 : 0.1;
 };
+
+/**
+ * Returns a color as rgba with the given opacity (0-1). Accepts hex (#RRGGBB).
+ */
+export const withOpacity = (hexColor: string, opacity: number): string => {
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};

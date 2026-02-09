@@ -14,6 +14,7 @@ const STORAGE_KEYS = {
   WIDGET_SETTINGS: '@bible:widget_settings',
   CURRENT_VERSE: '@bible:current_verse',
   CUSTOM_COLORS: '@bible:custom_colors',
+  THEME_NAME: '@bible:theme_name',
 };
 
 export class StorageService {
@@ -234,6 +235,26 @@ export class StorageService {
       }
     } catch (error) {
       console.error('Error saving custom colors:', error);
+    }
+  }
+
+  // Theme (light/dark mode)
+  static async getThemeName(): Promise<'light' | 'dark' | null> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.THEME_NAME);
+      if (data === 'light' || data === 'dark') return data;
+      return null;
+    } catch (error) {
+      console.error('Error getting theme name:', error);
+      return null;
+    }
+  }
+
+  static async saveThemeName(name: 'light' | 'dark'): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.THEME_NAME, name);
+    } catch (error) {
+      console.error('Error saving theme name:', error);
     }
   }
 }

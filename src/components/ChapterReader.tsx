@@ -96,7 +96,7 @@ export const ChapterReader: React.FC<ChapterReaderProps> = ({
             disabled={!canGoPrev}>
             <ArrowLeftIcon
               size={32}
-              color={!canGoPrev ? 'rgba(255, 255, 255, 0.3)' : '#FFFFFF'}
+              color={!canGoPrev ? theme.colors.textTertiary : theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -106,7 +106,7 @@ export const ChapterReader: React.FC<ChapterReaderProps> = ({
             disabled={!canGoNext}>
             <ArrowRightIcon
               size={32}
-              color={!canGoNext ? 'rgba(255, 255, 255, 0.3)' : '#FFFFFF'}
+              color={!canGoNext ? theme.colors.textTertiary : theme.colors.text}
             />
           </TouchableOpacity>
         </View>
@@ -125,7 +125,7 @@ const createStyles = (theme: any, insets: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      backgroundColor: 'transparent',
     },
     content: {
       paddingTop: insets.top + theme.safeArea.topPadding,

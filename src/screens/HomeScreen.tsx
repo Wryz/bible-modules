@@ -4,9 +4,14 @@ import {
   Text,
   StyleSheet,
   Dimensions,
-  Animated
+  Animated,
+  AppState,
+  AppStateStatus,
+  RefreshControl,
+  TouchableOpacity
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useFocusEffect} from '@react-navigation/native';
 import {StorageService} from '../services/storage';
 import {SchedulingService} from '../services/schedulingService';
 import {BibleService} from '../services/bibleService';
@@ -14,6 +19,7 @@ import {BibleVerse, VerseDisplay, ScheduledVerse} from '../types';
 import {useTheme} from '../theme/useTheme';
 import {getShadowOpacity} from '../theme/utils';
 import WidgetDataManager from '../native/WidgetDataManager';
+import {TopographyBackground} from '../components/TopographyBackground';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_GAP = 0; // No gap between cards
@@ -25,13 +31,16 @@ export const HomeScreen: React.FC = () => {
   const [allVerses, setAllVerses] = useState<VerseDisplay[]>([]);
   const [scheduledVerses, setScheduledVerses] = useState<ScheduledVerse[]>([]);
   const [snapOffsets, setSnapOffsets] = useState<number[]>([]);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const cardHeights = useRef<Map<number, number>>(new Map());
   const cardPositions = useRef<Map<number, number>>(new Map());
 
   const getRandomVerse = (): BibleVerse | null => {
     try {
-      const books = BibleService.getAllBooks();
+      // Only select from New Testament books
+      const books = BibleService.getNewTestamentBooks();
       if (books.length === 0) return null;
       const randomBook = books[Math.floor(Math.random() * books.length)];
       const chapters = BibleService.getChapters(randomBook);
@@ -65,35 +74,179 @@ export const HomeScreen: React.FC = () => {
         } catch (error) {
           console.error('Error updating widget:', error);
         }
+        // Return the verse so we can immediately update React state
+        return randomVerse;
       }
     }
+    return null;
   }, []);
 
   const loadData = useCallback(async () => {
-    await initializeVerseIfNeeded();
-    const displayed = await StorageService.getDisplayedVerses();
+    // First, ensure we have a verse initialized before loading data
+    const newlyCreatedVerse = await initializeVerseIfNeeded();
+    
+    // Parallelize data loading operations
+    const [displayed, scheduled] = await Promise.all([
+      StorageService.getDisplayedVerses(),
+      StorageService.getScheduledVerses(),
+    ]);
+    
+    // If we just created a verse, immediately add it to state
+    let versesToDisplay: VerseDisplay[] = displayed;
+    if (newlyCreatedVerse) {
+      const newVerseDisplay: VerseDisplay = {
+        verse: newlyCreatedVerse,
+        displayedAt: new Date(),
+      };
+      // Add the new verse at the beginning and ensure it's in the list
+      versesToDisplay = [newVerseDisplay, ...displayed];
+    } else if (displayed.length === 0) {
+      // Fallback: if we still have no displayed verses, create one
+      const randomVerse = getRandomVerse();
+      if (randomVerse) {
+        await StorageService.setCurrentVerse(randomVerse);
+        await StorageService.addDisplayedVerse(randomVerse);
+        const newVerseDisplay: VerseDisplay = {
+          verse: randomVerse,
+          displayedAt: new Date(),
+        };
+        versesToDisplay = [newVerseDisplay];
+        // Also reload from storage to ensure consistency
+        const updatedDisplayed = await StorageService.getDisplayedVerses();
+        versesToDisplay = updatedDisplayed;
+      }
+    }
+    
     // Sort by most recent first (newest at top)
-    const sorted = displayed.sort(
+    const sorted = versesToDisplay.sort(
       (a, b) => b.displayedAt.getTime() - a.displayedAt.getTime(),
     );
     setAllVerses(sorted.slice(0, 30));
     
-    // Load scheduled verses
-    const scheduled = await StorageService.getScheduledVerses();
-    // Sort by scheduled time (earliest first)
-    const sortedScheduled = scheduled.sort(
+    // Filter out past due scheduled verses and sort by scheduled time (earliest first)
+    const now = new Date();
+    const upcomingScheduled = scheduled.filter(
+      (v) => v.scheduledFor.getTime() > now.getTime()
+    );
+    const sortedScheduled = upcomingScheduled.sort(
       (a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime(),
     );
     setScheduledVerses(sortedScheduled);
+    
+    // Mark initialization as complete
+    setIsInitializing(false);
   }, [initializeVerseIfNeeded]);
+
+  const handleUnscheduleVerse = useCallback(async (id: string) => {
+    try {
+      await StorageService.removeScheduledVerse(id);
+      // Update state to remove the unscheduled verse
+      setScheduledVerses(prevVerses => prevVerses.filter(v => v.id !== id));
+    } catch (error) {
+      console.error('Error unscheduling verse:', error);
+    }
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      // Get a new random verse
+      const randomVerse = getRandomVerse();
+      if (randomVerse) {
+        // Save to storage
+        await StorageService.setCurrentVerse(randomVerse);
+        await StorageService.addDisplayedVerse(randomVerse);
+        
+        // Update widget
+        try {
+          await WidgetDataManager.updateVerse(
+            randomVerse.text,
+            randomVerse.reference,
+          );
+        } catch (error) {
+          console.error('Error updating widget:', error);
+        }
+        
+        // Immediately add to React state
+        const newVerseDisplay: VerseDisplay = {
+          verse: randomVerse,
+          displayedAt: new Date(),
+        };
+        
+        // Add new verse at the beginning of the list
+        setAllVerses(prevVerses => {
+          const updated = [newVerseDisplay, ...prevVerses];
+          return updated.slice(0, 30); // Keep only last 30
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing verse:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     loadData();
     const interval = setInterval(() => {
       SchedulingService.updateWidgetWithNextVerse().then(() => loadData());
     }, 60000);
-    return () => clearInterval(interval);
+    
+    // Reload data when app comes to foreground to show newly updated verses
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App has come to foreground, reload data to show any new verses
+        loadData();
+      }
+    };
+    
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      clearInterval(interval);
+      subscription.remove();
+    };
   }, [loadData]);
+
+  // Reload scheduled verses when screen comes into focus
+  // This ensures newly scheduled verses appear immediately when navigating back to HomeScreen
+  useFocusEffect(
+    useCallback(() => {
+      // Reload scheduled verses when screen focuses
+      const reloadScheduledVerses = async () => {
+        const scheduled = await StorageService.getScheduledVerses();
+        // Filter out past due scheduled verses
+        const now = new Date();
+        const upcomingScheduled = scheduled.filter(
+          (v) => v.scheduledFor.getTime() > now.getTime()
+        );
+        const sortedScheduled = upcomingScheduled.sort(
+          (a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime(),
+        );
+        setScheduledVerses(sortedScheduled);
+      };
+      reloadScheduledVerses();
+    }, [])
+  );
+
+  // Also reload scheduled verses periodically to catch any updates immediately
+  // This ensures newly scheduled verses appear even if user is already on HomeScreen
+  useEffect(() => {
+    const reloadInterval = setInterval(async () => {
+      const scheduled = await StorageService.getScheduledVerses();
+      // Filter out past due scheduled verses
+      const now = new Date();
+      const upcomingScheduled = scheduled.filter(
+        (v) => v.scheduledFor.getTime() > now.getTime()
+      );
+      const sortedScheduled = upcomingScheduled.sort(
+        (a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime(),
+      );
+      setScheduledVerses(sortedScheduled);
+    }, 500); // Check every 500ms for new scheduled verses for near-instant updates
+
+    return () => clearInterval(reloadInterval);
+  }, []);
 
 
   const formatTimeAgo = (date: Date): string => {
@@ -147,7 +300,8 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {(scheduledVerses.length > 0 || allVerses.length > 0) ? (
+      <TopographyBackground />
+      {(scheduledVerses.length > 0 || allVerses.length > 0 || isInitializing) ? (
         <Animated.ScrollView
           style={styles.scrollView}
           contentContainerStyle={[
@@ -168,7 +322,15 @@ export const HomeScreen: React.FC = () => {
           )}
           scrollEventThrottle={16}
           snapToOffsets={snapOffsets.length > 0 ? snapOffsets : undefined}
-          snapToAlignment="start">
+          snapToAlignment="start"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
+              colors={[theme.colors.primary]}
+            />
+          }>
           {/* Scheduled Verses Section */}
           {scheduledVerses.length > 0 && (
             <View style={styles.scheduledSection}>
@@ -176,12 +338,20 @@ export const HomeScreen: React.FC = () => {
               {scheduledVerses.map((scheduled) => (
                 <View key={scheduled.id} style={styles.scheduledCard}>
                   <View style={styles.scheduledHeader}>
-                    <Text style={styles.scheduledReference}>
-                      {scheduled.verse.reference}
-                    </Text>
-                    <Text style={styles.scheduledTime}>
-                      {formatScheduledTime(scheduled.scheduledFor)}
-                    </Text>
+                    <View style={styles.scheduledHeaderLeft}>
+                      <Text style={styles.scheduledReference}>
+                        {scheduled.verse.reference}
+                      </Text>
+                      <Text style={styles.scheduledTime}>
+                        {formatScheduledTime(scheduled.scheduledFor)}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => handleUnscheduleVerse(scheduled.id)}
+                      style={styles.unscheduleButton}
+                      hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+                      <Text style={styles.unscheduleButtonText}>×</Text>
+                    </TouchableOpacity>
                   </View>
                   <Text style={styles.scheduledText} numberOfLines={2}>
                     {scheduled.verse.text}
@@ -270,22 +440,22 @@ export const HomeScreen: React.FC = () => {
                     // Collect all card positions and heights first
                     const cardData: Array<{y: number; height: number}> = [];
                     for (let i = 0; i < allVerses.length; i++) {
-                      const cardY = cardPositions.current.get(i);
+                      const cardYPos = cardPositions.current.get(i);
                       const cardH = cardHeights.current.get(i);
-                      if (cardY !== undefined && cardH !== undefined) {
-                        cardData.push({y: cardY, height: cardH});
+                      if (cardYPos !== undefined && cardH !== undefined) {
+                        cardData.push({y: cardYPos, height: cardH});
                       }
                     }
                     
                     // Calculate snap offsets for each card
                     // IMPORTANT: This calculation must match the snapPosition in animations above
                     for (let i = 0; i < cardData.length; i++) {
-                      const {y: cardY} = cardData[i];
+                      const {y: cardYPos} = cardData[i];
                       // Card's top position in content (y is relative to contentContainer)
-                      // To align card top with viewport top, scroll offset = cardY - paddingTop
+                      // To align card top with viewport top, scroll offset = cardYPos - paddingTop
                       // When scrollY = 0, content at paddingTop is at viewport top
                       // This is the exact same calculation as snapPosition in the animation
-                      const scrollOffset = Math.max(0, cardY - paddingTop);
+                      const scrollOffset = Math.max(0, cardYPos - paddingTop);
                       offsets.push(scrollOffset);
                     }
                     
@@ -336,6 +506,7 @@ const createStyles = (theme: any) =>
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
+      position: 'relative',
     },
     scrollView: {
       flex: 1,
@@ -417,6 +588,12 @@ const createStyles = (theme: any) =>
       alignItems: 'center',
       marginBottom: theme.spacing.xs,
     },
+    scheduledHeaderLeft: {
+      flex: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
     scheduledReference: {
       fontSize: theme.typography.sizes.sm,
       fontWeight: theme.typography.weights.semibold,
@@ -427,6 +604,23 @@ const createStyles = (theme: any) =>
       fontSize: theme.typography.sizes.xs,
       color: theme.colors.textSecondary,
       fontWeight: theme.typography.weights.medium,
+    },
+    unscheduleButton: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: theme.colors.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginLeft: theme.spacing.sm,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    unscheduleButtonText: {
+      fontSize: 20,
+      color: theme.colors.textSecondary,
+      fontWeight: theme.typography.weights.bold,
+      lineHeight: 20,
     },
     scheduledText: {
       fontSize: theme.typography.sizes.body,

@@ -138,9 +138,11 @@ struct BibleVersesWidgetEntryView: View {
     var backgroundColor: Color {
         let sharedDefaults = UserDefaults(suiteName: "group.com.bibleversesapp")
         let themeName = sharedDefaults?.string(forKey: "themeName") ?? "dark"
+        // Force dark background for both medium and large widgets
         switch themeName {
         case "light":
-            return Color(hex: "FFFFFF")
+            // Use dark background even for light theme in widgets for consistency
+            return Color(hex: "1E1E1E")
         case "wood":
             return Color(hex: "FFF8DC")
         default: // dark
@@ -151,9 +153,11 @@ struct BibleVersesWidgetEntryView: View {
     var textColor: Color {
         let sharedDefaults = UserDefaults(suiteName: "group.com.bibleversesapp")
         let themeName = sharedDefaults?.string(forKey: "themeName") ?? "dark"
+        // Use light text for dark background (consistent for both medium and large)
         switch themeName {
         case "light":
-            return Color(hex: "000000")
+            // Use light text since we're forcing dark background
+            return Color(hex: "F5F5F7")
         case "wood":
             return Color(hex: "3E2723")
         default: // dark
@@ -164,9 +168,11 @@ struct BibleVersesWidgetEntryView: View {
     var secondaryTextColor: Color {
         let sharedDefaults = UserDefaults(suiteName: "group.com.bibleversesapp")
         let themeName = sharedDefaults?.string(forKey: "themeName") ?? "dark"
+        // Use light secondary text for dark background
         switch themeName {
         case "light":
-            return Color(hex: "333333")
+            // Use light secondary text since we're forcing dark background
+            return Color(hex: "D1D1D6")
         case "wood":
             return Color(hex: "5D4037")
         default: // dark
@@ -202,29 +208,29 @@ struct BibleVersesWidgetEntryView: View {
             HStack(alignment: .center, spacing: 8) {
                 // Reference header
                 Text(entry.reference.uppercased())
-                    .font(.system(size: family == .systemMedium ? 10 : 13, weight: .semibold, design: .default))
+                    .font(.system(size: family == .systemMedium ? 15 : 14, weight: .semibold, design: .default))
                     .foregroundColor(primaryColor)
                     .tracking(0.5)
                 
                 // Time since posted
                 if let postedAt = entry.postedAt {
                     Text("•")
-                        .font(.system(size: family == .systemMedium ? 8 : 11, weight: .regular))
+                        .font(.system(size: family == .systemMedium ? 13 : 12, weight: .regular))
                         .foregroundColor(secondaryTextColor)
                     Text(formatTimeAgo(postedAt))
-                        .font(.system(size: family == .systemMedium ? 8 : 11, weight: .regular))
+                        .font(.system(size: family == .systemMedium ? 13 : 12, weight: .regular))
                         .foregroundColor(secondaryTextColor)
                 }
                 
                 Spacer()
             }
-            .padding(.bottom, family == .systemMedium ? 8 : 14)
+            .padding(.bottom, family == .systemMedium ? 6 : 14)
             
-            // Verse text with serif font - smaller sizes for medium widget
+            // Verse text with serif font - increased sizes for both medium and large widgets
             Text(entry.verse)
-                .font(.custom("Times New Roman", size: family == .systemMedium ? 13 : 21))
+                .font(.custom("Times New Roman", size: family == .systemMedium ? 16 : 20))
                 .foregroundColor(textColor)
-                .lineSpacing(family == .systemMedium ? 5 : 12)
+                .lineSpacing(family == .systemMedium ? 3 : 10)
                 .multilineTextAlignment(.leading)
                 .lineLimit(nil)
         }

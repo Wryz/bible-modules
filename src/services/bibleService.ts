@@ -1,4 +1,4 @@
-import {BibleBook, BibleVerse, BibleVerseData} from '../types';
+import {BibleBook, BibleVerse} from '../types';
 import nivBibleData from '../data/bible-niv.json';
 
 interface NIVBibleData {
@@ -101,6 +101,21 @@ export class BibleService {
 
   static getAllBooks(): string[] {
     return this.bibleData.map(book => book.name);
+  }
+
+  static getNewTestamentBooks(): string[] {
+    // New Testament starts with Matthew
+    const newTestamentStart = 'Matthew';
+    const allBooks = this.getAllBooks();
+    const matthewIndex = allBooks.findIndex(book => book === newTestamentStart);
+    
+    if (matthewIndex === -1) {
+      // If Matthew not found, return all books (fallback)
+      return allBooks;
+    }
+    
+    // Return all books from Matthew onwards
+    return allBooks.slice(matthewIndex);
   }
 
   static getChapters(bookName: string): number[] {
