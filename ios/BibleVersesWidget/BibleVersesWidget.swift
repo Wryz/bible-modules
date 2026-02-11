@@ -53,8 +53,6 @@ struct BibleVersesWidgetProvider: TimelineProvider {
         case "custom":
             hoursUntilUpdate = sharedDefaults?.integer(forKey: "customHours") ?? 24
         case "onAppOpen":
-            // For onAppOpen, refresh every 5 minutes to catch updates when app opens
-            // The main update happens when the app comes to foreground
             hoursUntilUpdate = 0
             let minutesUntilUpdate = 5
             let entry = BibleVerseEntry(
@@ -78,7 +76,6 @@ struct BibleVersesWidgetProvider: TimelineProvider {
             postedAt: postedAt ?? Date()
         )
         
-        // Update based on user's refresh frequency setting
         let nextUpdate = Calendar.current.date(byAdding: .hour, value: hoursUntilUpdate, to: Date())!
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
@@ -116,91 +113,12 @@ struct BibleVersesWidgetEntryView: View {
     var entry: BibleVerseEntry
     @Environment(\.widgetFamily) var family
     
-    // Load theme colors from UserDefaults
-    var primaryColor: Color {
-        let sharedDefaults = UserDefaults(suiteName: "group.com.bibleversesapp")
-        // Always use the synced primary color (includes custom colors)
-        if let hexColor = sharedDefaults?.string(forKey: "themePrimaryColor") {
-            return Color(hex: hexColor)
-        }
-        // Fallback to theme-based default colors if not synced yet
-        let themeName = sharedDefaults?.string(forKey: "themeName") ?? "dark"
-        switch themeName {
-        case "light":
-            return Color(hex: "007AFF")
-        case "wood":
-            return Color(hex: "8B4513")
-        default: // dark
-            return Color(hex: "5B8FF9")
-        }
-    }
-    
     var backgroundColor: Color {
-        let sharedDefaults = UserDefaults(suiteName: "group.com.bibleversesapp")
-        let themeName = sharedDefaults?.string(forKey: "themeName") ?? "dark"
-        // Force dark background for both medium and large widgets
-        switch themeName {
-        case "light":
-            // Use dark background even for light theme in widgets for consistency
-            return Color(hex: "1E1E1E")
-        case "wood":
-            return Color(hex: "FFF8DC")
-        default: // dark
-            return Color(hex: "1E1E1E")
-        }
+        return Color.black
     }
     
     var textColor: Color {
-        let sharedDefaults = UserDefaults(suiteName: "group.com.bibleversesapp")
-        let themeName = sharedDefaults?.string(forKey: "themeName") ?? "dark"
-        // Use light text for dark background (consistent for both medium and large)
-        switch themeName {
-        case "light":
-            // Use light text since we're forcing dark background
-            return Color(hex: "F5F5F7")
-        case "wood":
-            return Color(hex: "3E2723")
-        default: // dark
-            return Color(hex: "F5F5F7")
-        }
-    }
-    
-    var secondaryTextColor: Color {
-        let sharedDefaults = UserDefaults(suiteName: "group.com.bibleversesapp")
-        let themeName = sharedDefaults?.string(forKey: "themeName") ?? "dark"
-        // Use light secondary text for dark background
-        switch themeName {
-        case "light":
-            // Use light secondary text since we're forcing dark background
-            return Color(hex: "D1D1D6")
-        case "wood":
-            return Color(hex: "5D4037")
-        default: // dark
-            return Color(hex: "D1D1D6")
-        }
-    }
-    
-    // Format time since posted (matching HomeScreen format)
-    func formatTimeAgo(_ date: Date) -> String {
-        let now = Date()
-        let diffSeconds = now.timeIntervalSince(date)
-        let diffMins = Int(diffSeconds / 60)
-        let diffHours = Int(diffSeconds / 3600)
-        let diffDays = Int(diffSeconds / 86400)
-        
-        if diffMins < 1 {
-            return "Just now"
-        } else if diffMins < 60 {
-            return "\(diffMins)m ago"
-        } else if diffHours < 24 {
-            return "\(diffHours)h ago"
-        } else if diffDays < 7 {
-            return "\(diffDays)d ago"
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM d"
-            return formatter.string(from: date)
-        }
+        return Color(hex: "F5F5F7")
     }
     
     var body: some View {
@@ -209,18 +127,8 @@ struct BibleVersesWidgetEntryView: View {
                 // Reference header
                 Text(entry.reference.uppercased())
                     .font(.system(size: family == .systemMedium ? 15 : 14, weight: .semibold, design: .default))
-                    .foregroundColor(primaryColor)
+                    .foregroundColor(.white)
                     .tracking(0.5)
-                
-                // Time since posted
-                if let postedAt = entry.postedAt {
-                    Text("•")
-                        .font(.system(size: family == .systemMedium ? 13 : 12, weight: .regular))
-                        .foregroundColor(secondaryTextColor)
-                    Text(formatTimeAgo(postedAt))
-                        .font(.system(size: family == .systemMedium ? 13 : 12, weight: .regular))
-                        .foregroundColor(secondaryTextColor)
-                }
                 
                 Spacer()
             }
@@ -260,7 +168,7 @@ struct BibleVersesWidget_Previews: PreviewProvider {
                 date: Date(),
                 verse: "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
                 reference: "John 3:16",
-                postedAt: Date().addingTimeInterval(-3600) // 1 hour ago
+                postedAt: Date().addingTimeInterval(-3600)
             )
         )
         .previewContext(WidgetPreviewContext(family: .systemMedium))

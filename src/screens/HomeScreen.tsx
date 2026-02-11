@@ -52,7 +52,8 @@ export const HomeScreen: React.FC = () => {
         randomChapter,
       );
       if (verses.length === 0) return null;
-      return verses[Math.floor(Math.random() * verses.length)];
+      const picked = verses[Math.floor(Math.random() * verses.length)];
+      return BibleService.expandVerseWithContext(picked);
     } catch (error) {
       console.error('Error getting random verse:', error);
       return null;

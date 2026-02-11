@@ -1,4 +1,4 @@
-import {ScheduledVerse} from '../types';
+import {BibleVerse, ScheduledVerse} from '../types';
 import {StorageService} from './storage';
 import {BibleService} from './bibleService';
 import WidgetDataManager from '../native/WidgetDataManager';
@@ -14,16 +14,19 @@ export class SchedulingService {
   static async updateWidgetWithNextVerse(): Promise<void> {
     const nextVerse = await this.getNextScheduledVerse();
     if (nextVerse) {
+      const expandedVerse = BibleService.expandVerseWithContext(
+        nextVerse.verse,
+      );
       // Parallelize storage operations
       await Promise.all([
-        StorageService.setCurrentVerse(nextVerse.verse),
-        StorageService.addDisplayedVerse(nextVerse.verse),
+        StorageService.setCurrentVerse(expandedVerse),
+        StorageService.addDisplayedVerse(expandedVerse),
         StorageService.removeScheduledVerse(nextVerse.id),
       ]);
       // Widget update can happen after storage operations complete (non-blocking)
       WidgetDataManager.updateVerse(
-        nextVerse.verse.text,
-        nextVerse.verse.reference,
+        expandedVerse.text,
+        expandedVerse.reference,
       ).catch(error => {
         console.error('Error updating widget:', error);
       });
@@ -115,7 +118,7 @@ export class SchedulingService {
 
   static async scheduleNextVerses(count: number = 7): Promise<void> {
     const settings = await StorageService.getWidgetSettings();
-    
+
     // For onAppOpen frequency, we don't need to schedule verses in advance
     // The verse will be selected when the app opens
     if (settings.refreshFrequency === 'onAppOpen') {
@@ -125,26 +128,61 @@ export class SchedulingService {
     const interval = await this.getRefreshInterval();
     const now = new Date();
 
-    // Get random verses to schedule (in production, use your collection or favorites)
+    // Get recently displayed references to avoid repeating them
     const displayed = await StorageService.getDisplayedVerses();
-    const allVerses = displayed.map(v => v.verse);
+    const excludeRefs = new Set(
+      displayed.slice(0, 20).map(v => v.verse.reference),
+    );
 
-    // For demo, we'll create some sample scheduled verses
-    // In production, you'd select from user's collections or favorites
-    for (let i = 0; i < count; i++) {
-      const scheduledFor = new Date(now.getTime() + interval * (i + 1));
-      // In production, select from actual verse pool
-      if (allVerses.length > 0) {
-        const randomVerse =
-          allVerses[Math.floor(Math.random() * allVerses.length)];
-        const scheduledVerse: ScheduledVerse = {
-          id: Date.now().toString() + i,
-          verse: randomVerse,
-          scheduledFor,
-        };
-        await StorageService.addScheduledVerse(scheduledVerse);
-      }
+    let scheduled = 0;
+    const maxAttempts = count * 10; // Prevent infinite loop
+    let attempts = 0;
+
+    while (scheduled < count && attempts < maxAttempts) {
+      attempts++;
+      const randomVerse = await this.getRandomVerseFromBible(excludeRefs);
+      if (!randomVerse) break;
+
+      const scheduledFor = new Date(now.getTime() + interval * (scheduled + 1));
+      const scheduledVerse: ScheduledVerse = {
+        id: `${Date.now()}-${scheduled}`,
+        verse: randomVerse,
+        scheduledFor,
+      };
+      await StorageService.addScheduledVerse(scheduledVerse);
+      excludeRefs.add(randomVerse.reference);
+      scheduled++;
     }
+  }
+
+  /**
+   * Gets a random verse from the New Testament, excluding specified references.
+   * Used by scheduleNextVerses to ensure unique verses per batch.
+   */
+  private static async getRandomVerseFromBible(
+    excludeRefs: Set<string>,
+  ): Promise<BibleVerse | null> {
+    const books = BibleService.getNewTestamentBooks();
+    if (books.length === 0) return null;
+
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const randomBook = books[Math.floor(Math.random() * books.length)];
+      const chapters = BibleService.getChapters(randomBook);
+      if (chapters.length === 0) continue;
+
+      const randomChapter =
+        chapters[Math.floor(Math.random() * chapters.length)];
+      const verses = BibleService.getVersesInChapter(randomBook, randomChapter);
+      if (verses.length === 0) continue;
+
+      const pickedVerse = verses[Math.floor(Math.random() * verses.length)];
+      const randomVerse = BibleService.expandVerseWithContext(pickedVerse);
+
+      if (excludeRefs.has(randomVerse.reference)) continue;
+
+      return randomVerse;
+    }
+    return null;
   }
 
   static async getRandomVerse(): Promise<ScheduledVerse | null> {
@@ -174,8 +212,9 @@ export class SchedulingService {
         continue;
       }
       
-      // Pick a random verse
-      const randomVerse = verses[Math.floor(Math.random() * verses.length)];
+      // Pick a random verse and expand with context if needed
+      const pickedVerse = verses[Math.floor(Math.random() * verses.length)];
+      const randomVerse = BibleService.expandVerseWithContext(pickedVerse);
       
       // If we have a current verse, make sure the new one is different
       if (currentVerse && 
@@ -200,7 +239,8 @@ export class SchedulingService {
       const randomChapter = chapters[Math.floor(Math.random() * chapters.length)];
       const verses = BibleService.getVersesInChapter(randomBook, randomChapter);
       if (verses.length > 0) {
-        const randomVerse = verses[Math.floor(Math.random() * verses.length)];
+        const pickedVerse = verses[Math.floor(Math.random() * verses.length)];
+        const randomVerse = BibleService.expandVerseWithContext(pickedVerse);
         return {
           id: Date.now().toString(),
           verse: randomVerse,

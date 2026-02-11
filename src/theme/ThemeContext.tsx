@@ -1,4 +1,13 @@
-import React, {createContext, useState, useMemo, useEffect, useCallback, ReactNode} from 'react';
+import React, {
+  createContext,
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+  ReactNode,
+} from 'react';
+import {AppState, AppStateStatus} from 'react-native';
 import {ThemeName, loadTheme} from './themeLoader';
 import {ColorPalette} from './types';
 import {spacing, safeArea, borderRadius} from './spacing';
@@ -63,36 +72,54 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     loadSaved();
   }, []);
 
+  // Sync current theme/colors to the widget (called on change and when app comes to foreground)
+  const syncThemeToWidget = useCallback(
+    async (themeColors: ColorPalette) => {
+      try {
+        const WidgetDataManager = require('../native/WidgetDataManager').default;
+        if (WidgetDataManager.updateThemeName) {
+          WidgetDataManager.updateThemeName(themeName).catch((error: Error) => {
+            console.error('Error syncing theme name to widget:', error);
+          });
+        }
+        if (WidgetDataManager.updateThemeColors) {
+          await WidgetDataManager.updateThemeColors(
+            themeColors.primary || null,
+          ).catch((error: Error) => {
+            console.error('Error syncing theme colors to widget:', error);
+          });
+        }
+      } catch (error) {
+        console.error('Error syncing theme to widget:', error);
+      }
+    },
+    [themeName],
+  );
+
   // Update theme colors when theme name or custom colors change
   useEffect(() => {
     const updateColors = async () => {
       const themeColors = await loadTheme(themeName, customColors);
       setColors(themeColors);
-      // Sync theme name and colors to widget (non-blocking)
-      // Defer widget updates to avoid blocking UI on initial load
-      requestAnimationFrame(() => {
-        try {
-          const WidgetDataManager = require('../native/WidgetDataManager').default;
-          if (WidgetDataManager.updateThemeName) {
-            WidgetDataManager.updateThemeName(themeName).catch((error: Error) => {
-              console.error('Error syncing theme name to widget:', error);
-            });
-          }
-          if (WidgetDataManager.updateThemeColors) {
-            // Always sync the actual primary color being used (from theme or custom)
-            WidgetDataManager.updateThemeColors(
-              themeColors.primary || null,
-            ).catch((error: Error) => {
-              console.error('Error syncing theme colors to widget:', error);
-            });
-          }
-        } catch (error) {
-          console.error('Error syncing theme to widget:', error);
-        }
-      });
+      await syncThemeToWidget(themeColors);
     };
     updateColors();
-  }, [themeName, customColors]);
+  }, [themeName, customColors, syncThemeToWidget]);
+
+  // Re-sync theme to widget when app comes to foreground (ensures widget has latest color)
+  const colorsRef = useRef<ColorPalette | null>(null);
+  colorsRef.current = colors;
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      'change',
+      (nextAppState: AppStateStatus) => {
+        if (nextAppState === 'active' && colorsRef.current) {
+          syncThemeToWidget(colorsRef.current).catch(() => {});
+        }
+      },
+    );
+    return () => subscription.remove();
+  }, [syncThemeToWidget]);
 
   const theme: Theme = useMemo(
     () => ({
