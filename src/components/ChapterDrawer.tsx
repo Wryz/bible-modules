@@ -1,39 +1,55 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   Animated,
   PanResponder,
+  ScrollView,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BibleService} from '../services/bibleService';
 import {useTheme} from '../theme/useTheme';
-import {getShadowOpacity} from '../theme/utils';
+import {getShadowOpacity, withOpacity} from '../theme/utils';
 
 interface ChapterDrawerProps {
   visible: boolean;
-  currentBook: string;
+  currentBook: string | null;
+  currentChapter?: number;
   onBookSelect: (book: string) => void;
+  onBookUnselect?: () => void;
+  onChapterSelect?: (book: string, chapter: number) => void;
   onClose: () => void;
   onOpen?: () => void;
 }
 
+const CHAPTER_BOX_SIZE = 40;
+const CHAPTER_GAP = 8;
+
 export const ChapterDrawer: React.FC<ChapterDrawerProps> = ({
   visible,
   currentBook,
+  currentChapter,
   onBookSelect,
+  onBookUnselect,
+  onChapterSelect,
   onClose,
   onOpen,
 }) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const books = BibleService.getAllBooks();
+  const [expandedBook, setExpandedBook] = useState<string | null>(currentBook);
   const slideAnim = React.useRef(new Animated.Value(visible ? 0 : 1)).current;
   const backdropOpacity = React.useRef(new Animated.Value(visible ? 1 : 0)).current;
   const styles = createStyles(theme, insets);
+
+  React.useEffect(() => {
+    if (visible) {
+      setExpandedBook(currentBook);
+    }
+  }, [visible, currentBook]);
 
   React.useEffect(() => {
     // Always animate to fully open (0) or fully closed (1) - no intermediate positions
@@ -117,7 +133,17 @@ export const ChapterDrawer: React.FC<ChapterDrawerProps> = ({
   ).current;
 
   const handleBookSelect = (book: string) => {
-    onBookSelect(book);
+    if (expandedBook === book) {
+      setExpandedBook(null);
+      onBookUnselect?.();
+    } else {
+      setExpandedBook(book);
+      onBookSelect(book);
+    }
+  };
+
+  const handleChapterSelect = (book: string, chapter: number) => {
+    onChapterSelect?.(book, chapter);
     onClose();
   };
 
@@ -172,31 +198,62 @@ export const ChapterDrawer: React.FC<ChapterDrawerProps> = ({
           </Text>
         </View>
 
-        <FlatList
-          data={books}
-          keyExtractor={item => item}
+        <ScrollView
+          style={styles.scrollArea}
           contentContainerStyle={styles.booksList}
-          renderItem={({item}) => {
-            const isSelected = item === currentBook;
+          showsVerticalScrollIndicator={true}>
+          {books.map(book => {
+            const isExpanded = expandedBook === book;
+            const isCurrent = book === currentBook;
+            const chapters = BibleService.getChapters(book);
             return (
-              <TouchableOpacity
-                style={[
-                  styles.bookItem,
-                  isSelected && styles.bookItemSelected,
-                ]}
-                onPress={() => handleBookSelect(item)}>
-                <Text
+              <View key={book} style={styles.bookBlock}>
+                <TouchableOpacity
                   style={[
-                    styles.bookItemText,
-                    isSelected && styles.bookItemTextSelected,
-                  ]}>
-                  {item}
-                </Text>
-                {isSelected && <View style={styles.selectedIndicator} />}
-              </TouchableOpacity>
+                    styles.bookItem,
+                    styles.bookItemOutlined,
+                    isCurrent && styles.bookItemCurrent,
+                  ]}
+                  onPress={() => handleBookSelect(book)}
+                  activeOpacity={0.7}>
+                  <Text
+                    style={[
+                      styles.bookItemText,
+                      isCurrent && styles.bookItemTextCurrent,
+                    ]}>
+                    {book}
+                  </Text>
+                </TouchableOpacity>
+                {isExpanded && (
+                  <View style={styles.chaptersWrap}>
+                    {chapters.map(ch => {
+                      const isActive =
+                        isCurrent && currentChapter !== undefined && ch === currentChapter;
+                      return (
+                        <TouchableOpacity
+                          key={ch}
+                          style={[
+                            styles.chapterBox,
+                            isActive ? styles.chapterBoxFilled : styles.chapterBoxOutlined,
+                          ]}
+                          onPress={() => handleChapterSelect(book, ch)}
+                          activeOpacity={0.7}>
+                          <Text
+                            style={[
+                              styles.chapterBoxText,
+                              isActive ? styles.chapterBoxTextFilled : styles.chapterBoxTextOutlined,
+                            ]}>
+                            {ch}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
             );
-          }}
-        />
+          })}
+        </ScrollView>
       </Animated.View>
     </>
   );
@@ -274,35 +331,71 @@ const createStyles = (theme: any, insets: any) =>
       fontSize: theme.typography.sizes.sm,
       color: theme.colors.textSecondary,
     },
+    scrollArea: {
+      flex: 1,
+    },
     booksList: {
       padding: theme.spacing.md,
+      paddingBottom: theme.spacing.xxl,
+    },
+    bookBlock: {
+      marginBottom: theme.spacing.md,
     },
     bookItem: {
       paddingVertical: theme.spacing.md,
       paddingHorizontal: theme.spacing.lg,
       borderRadius: theme.borderRadius.md,
-      marginBottom: theme.spacing.xs,
-      backgroundColor: theme.colors.surfaceElevated,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
     },
-    bookItemSelected: {
-      backgroundColor: theme.colors.primary,
+    bookItemOutlined: {
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderColor: theme.colors.border,
+    },
+    bookItemCurrent: {
+      borderColor: theme.colors.primary,
+      borderWidth: 2,
     },
     bookItemText: {
       fontSize: theme.typography.sizes.body,
       fontWeight: theme.typography.weights.medium,
       color: theme.colors.text,
     },
-    bookItemTextSelected: {
-      color: theme.colors.surface,
-      fontWeight: theme.typography.weights.bold,
+    bookItemTextCurrent: {
+      color: theme.colors.primary,
+      fontWeight: theme.typography.weights.semibold,
     },
-    selectedIndicator: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: theme.colors.surface,
+    chaptersWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: CHAPTER_GAP,
+      marginTop: theme.spacing.sm,
+      marginLeft: theme.spacing.sm,
+    },
+    chapterBox: {
+      width: CHAPTER_BOX_SIZE,
+      height: CHAPTER_BOX_SIZE,
+      borderRadius: theme.borderRadius.sm,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    chapterBoxFilled: {
+      backgroundColor: theme.colors.primary,
+    },
+    chapterBoxOutlined: {
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderColor: theme.colors.border,
+    },
+    chapterBoxText: {
+      fontSize: theme.typography.sizes.sm,
+      fontWeight: theme.typography.weights.semibold,
+    },
+    chapterBoxTextFilled: {
+      color: theme.colors.surface,
+    },
+    chapterBoxTextOutlined: {
+      color: theme.colors.text,
     },
   });

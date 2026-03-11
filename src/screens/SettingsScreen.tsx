@@ -8,6 +8,8 @@ import {
   TextInput,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
 import {WidgetSettings} from '../types';
 import {StorageService} from '../services/storage';
 import {SchedulingService} from '../services/schedulingService';
@@ -17,9 +19,15 @@ import {ThemeName, getAvailableThemes} from '../theme/themeLoader';
 import {ColorPicker} from '../components/ColorPicker';
 import {TopographyBackground} from '../components/TopographyBackground';
 
+type SettingsStackParamList = {
+  SettingsMain: undefined;
+  ScheduledVerses: undefined;
+};
+
 export const SettingsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const {setTheme, themeName, customColors, setCustomColors} = useThemeContext();
   const [settings, setSettings] = useState<WidgetSettings>({
     refreshFrequency: 'daily',
@@ -156,6 +164,13 @@ export const SettingsScreen: React.FC = () => {
             />
           </View>
         )}
+
+        <TouchableOpacity
+          style={styles.navRow}
+          onPress={() => navigation.navigate('ScheduledVerses')}>
+          <Text style={styles.navRowText}>Scheduled Verses</Text>
+          <Text style={styles.navRowChevron}>›</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.section}>
@@ -374,6 +389,25 @@ const createStyles = (theme: any, insets: any) =>
     resetButtonText: {
       fontSize: theme.typography.sizes.body,
       color: theme.colors.error,
+      fontWeight: theme.typography.weights.medium,
+    },
+    navRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: theme.spacing.lg,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+      marginTop: theme.spacing.md,
+    },
+    navRowText: {
+      fontSize: theme.typography.sizes.lg,
+      color: theme.colors.primary,
+      fontWeight: theme.typography.weights.medium,
+    },
+    navRowChevron: {
+      fontSize: 24,
+      color: theme.colors.primary,
       fontWeight: theme.typography.weights.medium,
     },
   });

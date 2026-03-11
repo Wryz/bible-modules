@@ -3,8 +3,11 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createStackNavigator} from '@react-navigation/stack';
 import {HomeScreen} from '../screens/HomeScreen';
+import {ChapterListScreen} from '../screens/ChapterListScreen';
+import {VersePracticeScreen} from '../screens/VersePracticeScreen';
 import {BibleScreen} from '../screens/BibleScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
+import {ScheduledVersesScreen} from '../screens/ScheduledVersesScreen';
 import {HomeIcon} from '../components/icons/HomeIcon';
 import {BibleIcon} from '../components/icons/BibleIcon';
 import {SettingsIcon} from '../components/icons/SettingsIcon';
@@ -18,6 +21,16 @@ const HomeStack = () => (
     <Stack.Screen
       name="HomeMain"
       component={HomeScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="ChapterList"
+      component={ChapterListScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="VersePractice"
+      component={VersePracticeScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
@@ -38,6 +51,11 @@ const SettingsStack = () => (
     <Stack.Screen
       name="SettingsMain"
       component={SettingsScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="ScheduledVerses"
+      component={ScheduledVersesScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>

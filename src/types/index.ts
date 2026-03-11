@@ -56,3 +56,28 @@ export interface ChatMessage {
   verses?: BibleVerse[];
   timestamp: Date;
 }
+
+export interface VerseProgress {
+  book: string;
+  chapter: number;
+  verseNumber: number;
+  masteryLevel: number; // 0-4 (0=not started, 1-4=increasing blank %)
+  attempts: number;
+  lastPracticed?: string; // ISO date string
+}
+
+export interface BookProgress {
+  bookName: string;
+  totalVerses: number;
+  completedVerses: number; // verses at mastery level 4
+  startedVerses: number; // verses at mastery level >= 1
+  totalChapters: number;
+  completedChapters: number; // chapters where all verses are at level 4
+}
+
+export interface ChapterProgress {
+  chapter: number;
+  totalVerses: number;
+  completedVerses: number;
+  startedVerses: number;
+}

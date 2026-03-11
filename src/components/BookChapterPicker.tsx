@@ -20,6 +20,7 @@ interface BookChapterPickerProps {
   currentChapter: number | null;
   onSelect: (book: string, chapter: number) => void;
   onClose: () => void;
+  bookOnly?: boolean;
 }
 
 export const BookChapterPicker: React.FC<BookChapterPickerProps> = ({
@@ -28,6 +29,7 @@ export const BookChapterPicker: React.FC<BookChapterPickerProps> = ({
   currentChapter,
   onSelect,
   onClose,
+  bookOnly = false,
 }) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -47,11 +49,16 @@ export const BookChapterPicker: React.FC<BookChapterPickerProps> = ({
 
   useEffect(() => {
     if (visible) {
-      setSelectedBook(currentBook);
+      setSelectedBook(bookOnly ? null : currentBook);
     }
-  }, [visible, currentBook]);
+  }, [visible, currentBook, bookOnly]);
 
   const handleBookSelect = (book: string) => {
+    if (bookOnly) {
+      onSelect(book, 1);
+      onClose();
+      return;
+    }
     setSelectedBook(book);
   };
 
@@ -109,9 +116,9 @@ export const BookChapterPicker: React.FC<BookChapterPickerProps> = ({
               <View style={styles.handle} />
               <View style={styles.header}>
                 <Text style={styles.title}>
-                  {selectedBook ? 'Select Chapter' : 'Select Book'}
+                  {selectedBook && !bookOnly ? 'Select Chapter' : 'Select Book'}
                 </Text>
-                {selectedBook && (
+                {selectedBook && !bookOnly && (
                   <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => setSelectedBook(null)}>
@@ -123,7 +130,7 @@ export const BookChapterPicker: React.FC<BookChapterPickerProps> = ({
                 )}
               </View>
 
-              {selectedBook ? (
+              {selectedBook && !bookOnly ? (
                 <View style={styles.chaptersContainer}>
                   <Text style={styles.bookTitle}>{selectedBook}</Text>
                   <FlatList

@@ -12,6 +12,7 @@ import {AppNavigator} from './src/navigation/AppNavigator';
 import {ThemeProvider} from './src/theme/ThemeContext';
 import {useThemeContext} from './src/theme/useTheme';
 import {ThemeName} from './src/theme/themeLoader';
+import {ProgressProvider} from './src/context/ProgressContext';
 import {SchedulingService} from './src/services/schedulingService';
 import 'react-native-gesture-handler';
 
@@ -59,8 +60,10 @@ function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider initialTheme={initialTheme}>
-        <ThemeAwareStatusBar />
-        <AppNavigator />
+        <ProgressProvider>
+          <ThemeAwareStatusBar />
+          <AppNavigator />
+        </ProgressProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

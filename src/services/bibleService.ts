@@ -103,6 +103,38 @@ export class BibleService {
     return this.bibleData.map(book => book.name);
   }
 
+  static getBookData(bookName: string): BibleBook | null {
+    return this.bibleData.find(
+      b =>
+        b.name.toLowerCase() === bookName.toLowerCase() ||
+        b.abbreviation.toLowerCase() === bookName.toLowerCase(),
+    ) || null;
+  }
+
+  static getOldTestamentBooks(): string[] {
+    const allBooks = this.getAllBooks();
+    const matthewIndex = allBooks.findIndex(book => book === 'Matthew');
+    if (matthewIndex === -1) return allBooks;
+    return allBooks.slice(0, matthewIndex);
+  }
+
+  static getVerseCountInChapter(bookName: string, chapter: number): number {
+    const book = this.getBookData(bookName);
+    if (!book) return 0;
+    const ch = book.chapters.find(c => c.chapterNumber === chapter);
+    return ch ? ch.verses.length : 0;
+  }
+
+  static getVersesPerChapterMap(bookName: string): Map<number, number> {
+    const book = this.getBookData(bookName);
+    const map = new Map<number, number>();
+    if (!book) return map;
+    for (const ch of book.chapters) {
+      map.set(ch.chapterNumber, ch.verses.length);
+    }
+    return map;
+  }
+
   static getNewTestamentBooks(): string[] {
     // New Testament starts with Matthew
     const newTestamentStart = 'Matthew';

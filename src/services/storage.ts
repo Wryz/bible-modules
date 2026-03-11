@@ -5,6 +5,9 @@ import {
   ScheduledVerse,
   WidgetSettings,
   BibleVerse,
+  VerseProgress,
+  BookProgress,
+  ChapterProgress,
 } from '../types';
 
 const STORAGE_KEYS = {
@@ -15,6 +18,8 @@ const STORAGE_KEYS = {
   CURRENT_VERSE: '@bible:current_verse',
   CUSTOM_COLORS: '@bible:custom_colors',
   THEME_NAME: '@bible:theme_name',
+  VERSE_PROGRESS: '@bible:verse_progress',
+  FOCUSED_BOOK: '@bible:focused_book',
 };
 
 export class StorageService {
@@ -256,5 +261,129 @@ export class StorageService {
     } catch (error) {
       console.error('Error saving theme name:', error);
     }
+  }
+
+  // Focused Book
+  static async getFocusedBook(): Promise<string | null> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.FOCUSED_BOOK);
+      return data || null;
+    } catch (error) {
+      console.error('Error getting focused book:', error);
+      return null;
+    }
+  }
+
+  static async setFocusedBook(book: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.FOCUSED_BOOK, book);
+    } catch (error) {
+      console.error('Error setting focused book:', error);
+    }
+  }
+
+  // Verse Progress (memorization tracking)
+  private static progressCache: VerseProgress[] | null = null;
+
+  static async getAllProgress(): Promise<VerseProgress[]> {
+    if (this.progressCache) return this.progressCache;
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.VERSE_PROGRESS);
+      if (!data) return [];
+      this.progressCache = JSON.parse(data) as VerseProgress[];
+      return this.progressCache;
+    } catch (error) {
+      console.error('Error getting verse progress:', error);
+      return [];
+    }
+  }
+
+  static async getVerseProgress(
+    book: string,
+    chapter: number,
+  ): Promise<VerseProgress[]> {
+    const all = await this.getAllProgress();
+    return all.filter(p => p.book === book && p.chapter === chapter);
+  }
+
+  static async saveVerseProgress(progress: VerseProgress): Promise<void> {
+    try {
+      const all = await this.getAllProgress();
+      const idx = all.findIndex(
+        p =>
+          p.book === progress.book &&
+          p.chapter === progress.chapter &&
+          p.verseNumber === progress.verseNumber,
+      );
+      if (idx >= 0) {
+        all[idx] = progress;
+      } else {
+        all.push(progress);
+      }
+      this.progressCache = all;
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.VERSE_PROGRESS,
+        JSON.stringify(all),
+      );
+    } catch (error) {
+      console.error('Error saving verse progress:', error);
+    }
+  }
+
+  static async getBookProgress(
+    bookName: string,
+    totalChapters: number[],
+    versesPerChapter: Map<number, number>,
+  ): Promise<BookProgress> {
+    const all = await this.getAllProgress();
+    const bookProgress = all.filter(p => p.book === bookName);
+
+    let totalVerses = 0;
+    for (const count of versesPerChapter.values()) {
+      totalVerses += count;
+    }
+
+    const completedVerses = bookProgress.filter(p => p.masteryLevel >= 4).length;
+    const startedVerses = bookProgress.filter(p => p.masteryLevel >= 1).length;
+
+    let completedChapters = 0;
+    for (const ch of totalChapters) {
+      const chapterVerseCount = versesPerChapter.get(ch) || 0;
+      const chapterCompleted = bookProgress.filter(
+        p => p.chapter === ch && p.masteryLevel >= 4,
+      ).length;
+      if (chapterVerseCount > 0 && chapterCompleted >= chapterVerseCount) {
+        completedChapters++;
+      }
+    }
+
+    return {
+      bookName,
+      totalVerses,
+      completedVerses,
+      startedVerses,
+      totalChapters: totalChapters.length,
+      completedChapters,
+    };
+  }
+
+  static async getChapterProgressList(
+    bookName: string,
+    chapters: number[],
+    versesPerChapter: Map<number, number>,
+  ): Promise<ChapterProgress[]> {
+    const all = await this.getAllProgress();
+    const bookProgress = all.filter(p => p.book === bookName);
+
+    return chapters.map(ch => {
+      const chapterVerses = bookProgress.filter(p => p.chapter === ch);
+      const totalVerses = versesPerChapter.get(ch) || 0;
+      return {
+        chapter: ch,
+        totalVerses,
+        completedVerses: chapterVerses.filter(p => p.masteryLevel >= 4).length,
+        startedVerses: chapterVerses.filter(p => p.masteryLevel >= 1).length,
+      };
+    });
   }
 }

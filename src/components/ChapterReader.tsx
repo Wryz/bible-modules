@@ -1,14 +1,17 @@
-import React, {useState} from 'react';
+import React, {useState, useRef, useCallback, useEffect} from 'react';
+
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  LayoutChangeEvent,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BibleVerse} from '../types';
 import {useTheme} from '../theme/useTheme';
+import {withOpacity} from '../theme/utils';
 import {VerseActionSheet} from './VerseActionSheet';
 import {ArrowLeftIcon} from './icons/ArrowLeftIcon';
 import {ArrowRightIcon} from './icons/ArrowRightIcon';
@@ -21,6 +24,8 @@ interface ChapterReaderProps {
   onNextChapter?: () => void;
   canGoPrev?: boolean;
   canGoNext?: boolean;
+  scrollToVerseNumber?: number;
+  onScrollComplete?: () => void;
 }
 
 export const ChapterReader: React.FC<ChapterReaderProps> = ({
@@ -31,12 +36,48 @@ export const ChapterReader: React.FC<ChapterReaderProps> = ({
   onNextChapter,
   canGoPrev = true,
   canGoNext = true,
+  scrollToVerseNumber,
+  onScrollComplete,
 }) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [selectedVerse, setSelectedVerse] = useState<BibleVerse | null>(null);
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [highlightedVerse, setHighlightedVerse] = useState<number | undefined>();
+  const scrollRef = useRef<ScrollView>(null);
+  const verseOffsets = useRef<Map<number, number>>(new Map());
+  const pendingScroll = useRef<number | undefined>(scrollToVerseNumber);
   const styles = createStyles(theme, insets);
+
+  useEffect(() => {
+    if (scrollToVerseNumber != null) {
+      pendingScroll.current = scrollToVerseNumber;
+      setHighlightedVerse(scrollToVerseNumber);
+      tryScroll(scrollToVerseNumber);
+    }
+  }, [scrollToVerseNumber]);
+
+  const tryScroll = useCallback((verseNum: number) => {
+    const y = verseOffsets.current.get(verseNum);
+    if (y != null && scrollRef.current) {
+      const topPadding = insets.top + 16;
+      scrollRef.current.scrollTo({y: y - topPadding, animated: true});
+      pendingScroll.current = undefined;
+      onScrollComplete?.();
+      setTimeout(() => setHighlightedVerse(undefined), 2000);
+    }
+  }, [insets.top, onScrollComplete]);
+
+  const handleVerseLayout = useCallback(
+    (verseNumber: number, event: LayoutChangeEvent) => {
+      const y = event.nativeEvent.layout.y;
+      verseOffsets.current.set(verseNumber, y);
+      if (pendingScroll.current === verseNumber) {
+        tryScroll(verseNumber);
+      }
+    },
+    [tryScroll],
+  );
 
   const handleVerseLongPress = (verse: BibleVerse) => {
     setSelectedVerse(verse);
@@ -59,6 +100,7 @@ export const ChapterReader: React.FC<ChapterReaderProps> = ({
   return (
     <>
       <ScrollView
+        ref={scrollRef}
         style={styles.container}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={true}>
@@ -71,7 +113,13 @@ export const ChapterReader: React.FC<ChapterReaderProps> = ({
 
         <View style={styles.versesContainer}>
           {verses.map((verse, index) => (
-            <View key={index} style={styles.verseContainer}>
+            <View
+              key={index}
+              style={[
+                styles.verseContainer,
+                highlightedVerse === verse.verseNumber && styles.verseHighlight,
+              ]}
+              onLayout={e => handleVerseLayout(verse.verseNumber, e)}>
               <Text
                 style={styles.verseNumber}
                 onLongPress={() => handleVerseLongPress(verse)}>
@@ -169,6 +217,11 @@ const createStyles = (theme: any, insets: any) =>
       flexDirection: 'row',
       marginBottom: theme.spacing.md,
       paddingVertical: theme.spacing.xs,
+    },
+    verseHighlight: {
+      backgroundColor: withOpacity(theme.colors.primary, 0.15),
+      borderRadius: theme.borderRadius.md,
+      paddingHorizontal: theme.spacing.xs,
     },
     verseNumber: {
       fontSize: theme.typography.sizes.body,

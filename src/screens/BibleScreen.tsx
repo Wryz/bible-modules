@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useRoute, RouteProp} from '@react-navigation/native';
 import {VerseCard} from '../components/VerseCard';
 import {BibleService} from '../services/bibleService';
 import {BibleVerse} from '../types';
@@ -19,22 +20,43 @@ import {SearchIcon} from '../components/icons/SearchIcon';
 import {CloseIcon} from '../components/icons/CloseIcon';
 import {TopographyBackground} from '../components/TopographyBackground';
 
+type BibleMainParams = {
+  BibleMain: {
+    verseRef?: {book: string; chapter: number; verseNumber: number};
+  };
+};
+
 export const BibleScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const route = useRoute<RouteProp<BibleMainParams, 'BibleMain'>>();
   const [selectedBook, setSelectedBook] = useState<string>('Genesis');
   const [selectedChapter, setSelectedChapter] = useState<number>(1);
   const [verses, setVerses] = useState<BibleVerse[]>([]);
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [drawerSelectedBook, setDrawerSelectedBook] = useState<string | null>(
+    null,
+  );
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<BibleVerse[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [scrollToVerse, setScrollToVerse] = useState<number | undefined>();
+
+  useEffect(() => {
+    const verseRef = route.params?.verseRef;
+    if (verseRef) {
+      setSelectedBook(verseRef.book);
+      setSelectedChapter(verseRef.chapter);
+      setScrollToVerse(verseRef.verseNumber);
+    }
+  }, [route.params?.verseRef]);
 
   useEffect(() => {
     loadChapter(selectedBook, selectedChapter);
   }, [selectedBook, selectedChapter]);
+
 
   // Cleanup search timeout on unmount
   useEffect(() => {
@@ -52,7 +74,18 @@ export const BibleScreen: React.FC = () => {
 
   const handleBookSelect = (book: string) => {
     setSelectedBook(book);
-    setSelectedChapter(1); // Go to first chapter of selected book
+    setSelectedChapter(1);
+    setDrawerSelectedBook(book);
+  };
+
+  const handleBookUnselect = () => {
+    setDrawerSelectedBook(null);
+  };
+
+  const handleChapterSelect = (book: string, chapter: number) => {
+    setSelectedBook(book);
+    setSelectedChapter(chapter);
+    setDrawerVisible(false);
   };
 
   const handlePrevChapter = () => {
@@ -149,7 +182,10 @@ export const BibleScreen: React.FC = () => {
       {!drawerVisible && (
         <TouchableOpacity
           style={styles.drawerOpenArea}
-          onPress={() => setDrawerVisible(true)}
+          onPress={() => {
+            setDrawerSelectedBook(selectedBook);
+            setDrawerVisible(true);
+          }}
           activeOpacity={1}
         />
       )}
@@ -240,16 +276,24 @@ export const BibleScreen: React.FC = () => {
           onNextChapter={handleNextChapter}
           canGoPrev={canGoPrev}
           canGoNext={canGoNext}
+          scrollToVerseNumber={scrollToVerse}
+          onScrollComplete={() => setScrollToVerse(undefined)}
         />
       )}
 
       {/* Books Drawer */}
       <ChapterDrawer
         visible={drawerVisible}
-        currentBook={selectedBook}
+        currentBook={drawerSelectedBook}
+        currentChapter={selectedChapter}
         onBookSelect={handleBookSelect}
+        onBookUnselect={handleBookUnselect}
+        onChapterSelect={handleChapterSelect}
         onClose={() => setDrawerVisible(false)}
-        onOpen={() => setDrawerVisible(true)}
+        onOpen={() => {
+          setDrawerSelectedBook(selectedBook);
+          setDrawerVisible(true);
+        }}
       />
     </View>
   );
