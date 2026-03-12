@@ -5,9 +5,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   LayoutChangeEvent,
 } from 'react-native';
+import {Button} from './Button';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BibleVerse} from '../types';
 import {useTheme} from '../theme/useTheme';
@@ -49,14 +49,6 @@ export const ChapterReader: React.FC<ChapterReaderProps> = ({
   const pendingScroll = useRef<number | undefined>(scrollToVerseNumber);
   const styles = createStyles(theme, insets);
 
-  useEffect(() => {
-    if (scrollToVerseNumber != null) {
-      pendingScroll.current = scrollToVerseNumber;
-      setHighlightedVerse(scrollToVerseNumber);
-      tryScroll(scrollToVerseNumber);
-    }
-  }, [scrollToVerseNumber]);
-
   const tryScroll = useCallback((verseNum: number) => {
     const y = verseOffsets.current.get(verseNum);
     if (y != null && scrollRef.current) {
@@ -67,6 +59,14 @@ export const ChapterReader: React.FC<ChapterReaderProps> = ({
       setTimeout(() => setHighlightedVerse(undefined), 2000);
     }
   }, [insets.top, onScrollComplete]);
+
+  useEffect(() => {
+    if (scrollToVerseNumber != null) {
+      pendingScroll.current = scrollToVerseNumber;
+      setHighlightedVerse(scrollToVerseNumber);
+      tryScroll(scrollToVerseNumber);
+    }
+  }, [scrollToVerseNumber, tryScroll]);
 
   const handleVerseLayout = useCallback(
     (verseNumber: number, event: LayoutChangeEvent) => {
@@ -138,7 +138,7 @@ export const ChapterReader: React.FC<ChapterReaderProps> = ({
       {/* Floating Navigation Arrows */}
       {onPrevChapter && onNextChapter && (
         <View style={styles.floatingNavigationBar}>
-          <TouchableOpacity
+          <Button
             style={styles.navArrow}
             onPress={onPrevChapter}
             disabled={!canGoPrev}>
@@ -146,9 +146,9 @@ export const ChapterReader: React.FC<ChapterReaderProps> = ({
               size={32}
               color={!canGoPrev ? theme.colors.textTertiary : theme.colors.text}
             />
-          </TouchableOpacity>
+          </Button>
 
-          <TouchableOpacity
+          <Button
             style={styles.navArrow}
             onPress={onNextChapter}
             disabled={!canGoNext}>
@@ -156,7 +156,7 @@ export const ChapterReader: React.FC<ChapterReaderProps> = ({
               size={32}
               color={!canGoNext ? theme.colors.textTertiary : theme.colors.text}
             />
-          </TouchableOpacity>
+          </Button>
         </View>
       )}
 

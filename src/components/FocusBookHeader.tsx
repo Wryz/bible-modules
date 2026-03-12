@@ -3,12 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Dimensions,
   LayoutAnimation,
   Platform,
   UIManager,
 } from 'react-native';
+import {Button} from './Button';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {BibleService} from '../services/bibleService';
@@ -112,7 +112,7 @@ export const FocusBookHeader: React.FC<FocusBookHeaderProps> = ({
   return (
     <View style={styles.container}>
       {/* Header row */}
-      <TouchableOpacity
+      <Button
         style={styles.bookSelector}
         activeOpacity={0.7}
         onPress={handleTogglePicker}>
@@ -122,7 +122,7 @@ export const FocusBookHeader: React.FC<FocusBookHeaderProps> = ({
         <View style={picking && styles.chevronFlipped}>
           <ChevronDownIcon size={20} color={theme.colors.text} />
         </View>
-      </TouchableOpacity>
+      </Button>
 
       {picking ? (
         <View style={styles.bookListContainer}>
@@ -135,7 +135,7 @@ export const FocusBookHeader: React.FC<FocusBookHeaderProps> = ({
                 ? Math.round((prog.completed / prog.total) * 100)
                 : 0;
             return (
-              <TouchableOpacity
+              <Button
                 key={name}
                 style={[styles.bookItem, isCurrent && styles.bookItemSelected]}
                 activeOpacity={0.7}
@@ -154,7 +154,7 @@ export const FocusBookHeader: React.FC<FocusBookHeaderProps> = ({
                   ]}>
                   {pct}% mastered
                 </Text>
-              </TouchableOpacity>
+              </Button>
             );
           })}
 
@@ -171,7 +171,7 @@ export const FocusBookHeader: React.FC<FocusBookHeaderProps> = ({
                     ? Math.round((prog.completed / prog.total) * 100)
                     : 0;
                 return (
-                  <TouchableOpacity
+                  <Button
                     key={name}
                     style={[
                       styles.bookItem,
@@ -193,7 +193,7 @@ export const FocusBookHeader: React.FC<FocusBookHeaderProps> = ({
                       ]}>
                       {pct}% mastered
                     </Text>
-                  </TouchableOpacity>
+                  </Button>
                 );
               })}
             </>
@@ -240,7 +240,7 @@ export const FocusBookHeader: React.FC<FocusBookHeaderProps> = ({
                   cp.totalVerses > 0 &&
                   cp.completedVerses >= cp.totalVerses;
                 return (
-                  <TouchableOpacity
+                  <Button
                     key={cp.chapter}
                     style={[
                       styles.tile,
@@ -271,7 +271,7 @@ export const FocusBookHeader: React.FC<FocusBookHeaderProps> = ({
                     {isComplete && (
                       <Text style={styles.tileCheck}>✓</Text>
                     )}
-                  </TouchableOpacity>
+                  </Button>
                 );
               })}
             </View>

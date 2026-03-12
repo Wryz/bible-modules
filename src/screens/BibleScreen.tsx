@@ -5,9 +5,9 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import {Button} from '../components/Button';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useRoute, RouteProp} from '@react-navigation/native';
 import {VerseCard} from '../components/VerseCard';
@@ -180,7 +180,7 @@ export const BibleScreen: React.FC = () => {
       <TopographyBackground />
       {/* Tap area to open drawer when closed - wider area for better UX */}
       {!drawerVisible && (
-        <TouchableOpacity
+        <Button
           style={styles.drawerOpenArea}
           onPress={() => {
             setDrawerSelectedBook(selectedBook);
@@ -192,11 +192,11 @@ export const BibleScreen: React.FC = () => {
 
       {/* Search Toggle Button - Floating */}
       {!searchVisible && (
-        <TouchableOpacity
+        <Button
           style={styles.searchToggleButton}
           onPress={() => setSearchVisible(true)}>
           <SearchIcon size={20} />
-        </TouchableOpacity>
+        </Button>
       )}
 
       {/* Collapsible Search Bar */}
@@ -228,7 +228,7 @@ export const BibleScreen: React.FC = () => {
             returnKeyType="search"
             autoFocus={true}
           />
-          <TouchableOpacity
+          <Button
             style={styles.closeSearchButton}
             onPress={() => {
               setSearchVisible(false);
@@ -236,7 +236,7 @@ export const BibleScreen: React.FC = () => {
               setSearchResults([]);
             }}>
             <CloseIcon size={20} />
-          </TouchableOpacity>
+          </Button>
         </View>
       )}
 
@@ -255,11 +255,11 @@ export const BibleScreen: React.FC = () => {
               Found {searchResults.length} verse(s)
             </Text>
             {searchResults.map((verse, index) => (
-              <TouchableOpacity
+              <Button
                 key={index}
                 onPress={() => handleSearchResultSelect(verse)}>
                 <VerseCard verse={verse} />
-              </TouchableOpacity>
+              </Button>
             ))}
           </ScrollView>
         ) : (

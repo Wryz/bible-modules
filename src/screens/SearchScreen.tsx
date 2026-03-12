@@ -5,9 +5,9 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import {Button} from '../components/Button';
 import {VerseCard} from '../components/VerseCard';
 import {BibleService} from '../services/bibleService';
 import {BibleVerse} from '../types';
@@ -53,9 +53,9 @@ export const SearchScreen: React.FC = () => {
           onSubmitEditing={handleSearch}
           returnKeyType="search"
         />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+        <Button style={styles.searchButton} onPress={handleSearch}>
           <Text style={styles.searchButtonText}>Search</Text>
-        </TouchableOpacity>
+        </Button>
       </View>
 
       {loading ? (

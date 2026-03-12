@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   TextInput,
 } from 'react-native';
+import {Button} from '../components/Button';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -87,7 +87,7 @@ export const SettingsScreen: React.FC = () => {
           Choose how often your widget displays a new verse
         </Text>
 
-        <TouchableOpacity
+        <Button
           style={[
             styles.option,
             settings.refreshFrequency === 'hourly' && styles.optionSelected,
@@ -100,9 +100,9 @@ export const SettingsScreen: React.FC = () => {
             ]}>
             Hourly
           </Text>
-        </TouchableOpacity>
+        </Button>
 
-        <TouchableOpacity
+        <Button
           style={[
             styles.option,
             settings.refreshFrequency === 'daily' && styles.optionSelected,
@@ -115,9 +115,9 @@ export const SettingsScreen: React.FC = () => {
             ]}>
             Daily
           </Text>
-        </TouchableOpacity>
+        </Button>
 
-        <TouchableOpacity
+        <Button
           style={[
             styles.option,
             settings.refreshFrequency === 'custom' && styles.optionSelected,
@@ -132,9 +132,9 @@ export const SettingsScreen: React.FC = () => {
             ]}>
             Custom
           </Text>
-        </TouchableOpacity>
+        </Button>
 
-        <TouchableOpacity
+        <Button
           style={[
             styles.option,
             settings.refreshFrequency === 'onAppOpen' && styles.optionSelected,
@@ -149,7 +149,7 @@ export const SettingsScreen: React.FC = () => {
             ]}>
             Every Time You Open the App
           </Text>
-        </TouchableOpacity>
+        </Button>
 
         {settings.refreshFrequency === 'custom' && (
           <View style={styles.customInputContainer}>
@@ -165,12 +165,12 @@ export const SettingsScreen: React.FC = () => {
           </View>
         )}
 
-        <TouchableOpacity
+        <Button
           style={styles.navRow}
           onPress={() => navigation.navigate('ScheduledVerses')}>
           <Text style={styles.navRowText}>Scheduled Verses</Text>
           <Text style={styles.navRowChevron}>›</Text>
-        </TouchableOpacity>
+        </Button>
       </View>
 
       <View style={styles.section}>
@@ -180,7 +180,7 @@ export const SettingsScreen: React.FC = () => {
         </Text>
 
         {getAvailableThemes().map((themeOption: ThemeName) => (
-          <TouchableOpacity
+          <Button
             key={themeOption}
             style={[
               styles.option,
@@ -194,7 +194,7 @@ export const SettingsScreen: React.FC = () => {
               ]}>
               {themeOption.charAt(0).toUpperCase() + themeOption.slice(1)}
             </Text>
-          </TouchableOpacity>
+          </Button>
         ))}
       </View>
 
@@ -205,7 +205,7 @@ export const SettingsScreen: React.FC = () => {
         </Text>
 
         {/* Primary Color */}
-        <TouchableOpacity
+        <Button
           style={styles.colorOption}
           onPress={() => setPrimaryColorPickerVisible(true)}>
           <View style={styles.colorOptionContent}>
@@ -222,17 +222,17 @@ export const SettingsScreen: React.FC = () => {
               ]}
             />
           </View>
-        </TouchableOpacity>
+        </Button>
 
         {/* Reset Colors */}
         {customColors?.primary && (
-          <TouchableOpacity
+          <Button
             style={styles.resetButton}
             onPress={async () => {
               await setCustomColors(null);
             }}>
             <Text style={styles.resetButtonText}>Reset to Default Colors</Text>
-          </TouchableOpacity>
+          </Button>
         )}
       </View>
 

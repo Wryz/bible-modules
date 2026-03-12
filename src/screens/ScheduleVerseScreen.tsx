@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Platform,
 } from 'react-native';
+import {Button} from '../components/Button';
 import {BibleVerse} from '../types';
 import {useVerseScheduling} from '../hooks/useVerseScheduling';
 import {VerseCard} from '../components/VerseCard';
@@ -51,16 +51,16 @@ export const ScheduleVerseScreen: React.FC<ScheduleVerseScreenProps> = ({
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Schedule For</Text>
-        <TouchableOpacity style={styles.dateButton} onPress={showDatePicker}>
+        <Button style={styles.dateButton} onPress={showDatePicker}>
           <Text style={styles.dateText}>
             {selectedDate.toLocaleString()}
           </Text>
-        </TouchableOpacity>
+        </Button>
       </View>
 
-      <TouchableOpacity style={styles.scheduleButton} onPress={handleSchedule}>
+      <Button style={styles.scheduleButton} onPress={handleSchedule}>
         <Text style={styles.scheduleButtonText}>Schedule Verse</Text>
-      </TouchableOpacity>
+      </Button>
     </ScrollView>
   );
 };

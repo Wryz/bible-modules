@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import {Button} from '../components/Button';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -393,11 +393,11 @@ export const VersePracticeScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled">
           {/* Header */}
           <View style={styles.paddedSection}>
-            <TouchableOpacity
+            <Button
               style={styles.backButton}
               onPress={() => navigation.goBack()}>
               <Text style={styles.backText}>← {bookName}</Text>
-            </TouchableOpacity>
+            </Button>
 
             <Text style={styles.chapterTitle}>Chapter {chapter}</Text>
           </View>
@@ -413,7 +413,7 @@ export const VersePracticeScreen: React.FC = () => {
               const ml = vp?.masteryLevel || 0;
               const isActive = idx === activeVerseIdx;
               return (
-                <TouchableOpacity
+                <Button
                   key={v.verseNumber}
                   style={[
                     styles.versePill,
@@ -429,7 +429,7 @@ export const VersePracticeScreen: React.FC = () => {
                     ]}>
                     {v.verseNumber}
                   </Text>
-                </TouchableOpacity>
+                </Button>
               );
             })}
           </ScrollView>
@@ -453,7 +453,7 @@ export const VersePracticeScreen: React.FC = () => {
                 {[1, 2, 3, 4].map(lvl => {
                   const isSelected = practiceLevel === lvl;
                   return (
-                    <TouchableOpacity
+                    <Button
                       key={lvl}
                       style={[
                         styles.reviewLevelPill,
@@ -474,7 +474,7 @@ export const VersePracticeScreen: React.FC = () => {
                         ]}>
                         {lvl * 25}%
                       </Text>
-                    </TouchableOpacity>
+                    </Button>
                   );
                 })}
               </View>
@@ -488,36 +488,36 @@ export const VersePracticeScreen: React.FC = () => {
 
           {/* Need help link */}
           {activeVerse && (
-            <TouchableOpacity
+            <Button
               style={styles.helpLink}
               onPress={handleViewInBible}>
               <Text style={styles.helpLinkText}>Need help? View in Bible</Text>
-            </TouchableOpacity>
+            </Button>
           )}
 
           {/* Action buttons */}
           {activeVerse && (
             <View style={styles.actions}>
               {!submitted ? (
-                <TouchableOpacity
+                <Button
                   style={styles.actionButtonOutline}
                   onPress={handleSubmit}>
                   <Text style={styles.actionButtonOutlineText}>Check</Text>
-                </TouchableOpacity>
+                </Button>
               ) : allCorrect ? (
                 <View style={styles.resultRow}>
                   <Text style={[styles.resultLabel, {color: theme.colors.success}]}>
                     {isMastered ? 'Still got it!' : 'Correct! Level up!'}
                   </Text>
                   {activeVerseIdx < verses.length - 1 && (
-                    <TouchableOpacity
+                    <Button
                       style={[
                         styles.actionButton,
                         {backgroundColor: theme.colors.primary},
                       ]}
                       onPress={handleNext}>
                       <Text style={styles.actionButtonText}>Next Verse</Text>
-                    </TouchableOpacity>
+                    </Button>
                   )}
                 </View>
               ) : (
@@ -526,20 +526,20 @@ export const VersePracticeScreen: React.FC = () => {
                     Some answers were incorrect
                   </Text>
                   <View style={styles.resultButtonsRow}>
-                    <TouchableOpacity
+                    <Button
                       style={styles.actionButtonOutline}
                       onPress={handleRetry}>
                       <Text style={styles.actionButtonOutlineText}>Retry</Text>
-                    </TouchableOpacity>
+                    </Button>
                     {activeVerseIdx < verses.length - 1 && (
-                      <TouchableOpacity
+                      <Button
                         style={[
                           styles.actionButton,
                           {backgroundColor: theme.colors.primary},
                         ]}
                         onPress={handleNext}>
                         <Text style={styles.actionButtonText}>Continue</Text>
-                      </TouchableOpacity>
+                      </Button>
                     )}
                   </View>
                 </View>

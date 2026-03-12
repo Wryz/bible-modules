@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Animated,
   PanResponder,
   ScrollView,
 } from 'react-native';
+import {Button} from './Button';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BibleService} from '../services/bibleService';
 import {useTheme} from '../theme/useTheme';
@@ -166,7 +166,7 @@ export const ChapterDrawer: React.FC<ChapterDrawerProps> = ({
           },
         ]}
         pointerEvents={visible ? 'auto' : 'none'}>
-        <TouchableOpacity
+        <Button
           style={StyleSheet.absoluteFill}
           activeOpacity={1}
           onPress={onClose}
@@ -184,12 +184,12 @@ export const ChapterDrawer: React.FC<ChapterDrawerProps> = ({
           },
         ]}>
         {/* Tab handle - part of drawer, moves with drawer */}
-        <TouchableOpacity
+        <Button
           style={styles.tabHandle}
           onPress={handleTabPress}
           activeOpacity={0.7}>
           <View style={styles.tabIndicator} />
-        </TouchableOpacity>
+        </Button>
 
         <View style={styles.drawerHeader}>
           <Text style={styles.drawerTitle}>Books</Text>
@@ -208,7 +208,7 @@ export const ChapterDrawer: React.FC<ChapterDrawerProps> = ({
             const chapters = BibleService.getChapters(book);
             return (
               <View key={book} style={styles.bookBlock}>
-                <TouchableOpacity
+                <Button
                   style={[
                     styles.bookItem,
                     styles.bookItemOutlined,
@@ -223,14 +223,14 @@ export const ChapterDrawer: React.FC<ChapterDrawerProps> = ({
                     ]}>
                     {book}
                   </Text>
-                </TouchableOpacity>
+                </Button>
                 {isExpanded && (
                   <View style={styles.chaptersWrap}>
                     {chapters.map(ch => {
                       const isActive =
                         isCurrent && currentChapter !== undefined && ch === currentChapter;
                       return (
-                        <TouchableOpacity
+                        <Button
                           key={ch}
                           style={[
                             styles.chapterBox,
@@ -245,7 +245,7 @@ export const ChapterDrawer: React.FC<ChapterDrawerProps> = ({
                             ]}>
                             {ch}
                           </Text>
-                        </TouchableOpacity>
+                        </Button>
                       );
                     })}
                   </View>

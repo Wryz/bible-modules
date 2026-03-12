@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Dimensions,
 } from 'react-native';
+import {Button} from '../components/Button';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -86,11 +86,11 @@ export const ChapterListScreen: React.FC = () => {
           paddingHorizontal: horizontalPad,
         }}
         showsVerticalScrollIndicator={false}>
-        <TouchableOpacity
+        <Button
           style={styles.backButton}
           onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
+        </Button>
 
         <Text style={styles.bookTitle}>{bookName}</Text>
         <View style={styles.statsRow}>
@@ -125,7 +125,7 @@ export const ChapterListScreen: React.FC = () => {
             const isComplete =
               cp.totalVerses > 0 && cp.completedVerses >= cp.totalVerses;
             return (
-              <TouchableOpacity
+              <Button
                 key={cp.chapter}
                 style={[
                   styles.tile,
@@ -154,7 +154,7 @@ export const ChapterListScreen: React.FC = () => {
                   </Text>
                 )}
                 {isComplete && <Text style={styles.tileCheck}>✓</Text>}
-              </TouchableOpacity>
+              </Button>
             );
           })}
         </View>

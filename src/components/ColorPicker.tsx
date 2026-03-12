@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Modal,
   TextInput,
   ScrollView,
 } from 'react-native';
+import {Button} from './Button';
 import {useTheme} from '../theme/useTheme';
 import {getShadowOpacity} from '../theme/utils';
 
@@ -75,7 +75,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             <Text style={styles.sectionTitle}>Preset Colors</Text>
             <View style={styles.colorGrid}>
               {PRESET_COLORS.map((color, index) => (
-                <TouchableOpacity
+                <Button
                   key={index}
                   style={[
                     styles.colorSwatch,
@@ -88,7 +88,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                       <Text style={styles.checkmarkText}>✓</Text>
                     </View>
                   )}
-                </TouchableOpacity>
+                </Button>
               ))}
             </View>
 
@@ -110,17 +110,17 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              <TouchableOpacity
+              <Button
                 style={styles.applyButton}
                 onPress={handleCustomColorSubmit}>
                 <Text style={styles.applyButtonText}>Apply</Text>
-              </TouchableOpacity>
+              </Button>
             </View>
           </ScrollView>
 
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Button style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeButtonText}>Cancel</Text>
-          </TouchableOpacity>
+          </Button>
         </View>
       </View>
     </Modal>

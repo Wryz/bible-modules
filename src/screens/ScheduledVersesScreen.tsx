@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Dimensions,
   AppState,
   AppStateStatus,
 } from 'react-native';
+import {Button} from '../components/Button';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -107,11 +107,11 @@ export const ScheduledVersesScreen: React.FC = () => {
           paddingHorizontal: theme.spacing.lg,
         }}
         showsVerticalScrollIndicator={false}>
-        <TouchableOpacity
+        <Button
           style={styles.backButton}
           onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>← Settings</Text>
-        </TouchableOpacity>
+        </Button>
 
         <Text style={styles.title}>Scheduled Verses</Text>
         <Text style={styles.subtitle}>
@@ -134,12 +134,12 @@ export const ScheduledVersesScreen: React.FC = () => {
                     {formatScheduledTime(scheduled.scheduledFor)}
                   </Text>
                 </View>
-                <TouchableOpacity
+                <Button
                   onPress={() => handleUnschedule(scheduled.id)}
                   style={styles.unscheduleButton}
                   hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
                   <Text style={styles.unscheduleButtonText}>×</Text>
-                </TouchableOpacity>
+                </Button>
               </View>
               <Text style={styles.scheduledText} numberOfLines={2}>
                 {scheduled.verse.text}

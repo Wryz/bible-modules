@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {View, Text, StyleSheet} from 'react-native';
+import {Button} from './Button';
 import {BibleVerse} from '../types';
 import {useTheme} from '../theme/useTheme';
 import {getShadowOpacity} from '../theme/utils';
@@ -21,14 +22,14 @@ export const VerseCard: React.FC<VerseCardProps> = ({verse, onPress}) => {
 
   return (
     <>
-      <TouchableOpacity
+      <Button
         style={styles.card}
         onPress={onPress}
         onLongPress={handleLongPress}
         activeOpacity={0.7}>
         <Text style={styles.reference}>{verse.reference}</Text>
         <Text style={styles.text}>{verse.text}</Text>
-      </TouchableOpacity>
+      </Button>
 
       <VerseActionSheet
         visible={actionSheetVisible}

@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   Modal,
-  TouchableOpacity,
   FlatList,
   TouchableWithoutFeedback,
 } from 'react-native';
+import {Button} from './Button';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BibleService} from '../services/bibleService';
 import {useTheme} from '../theme/useTheme';
@@ -72,7 +72,7 @@ export const BookChapterPicker: React.FC<BookChapterPickerProps> = ({
   const renderBookItem = ({item}: {item: string}) => {
     const isSelected = item === selectedBook;
     return (
-      <TouchableOpacity
+      <Button
         style={[styles.bookItem, isSelected && styles.bookItemSelected]}
         onPress={() => handleBookSelect(item)}>
         <Text
@@ -82,14 +82,14 @@ export const BookChapterPicker: React.FC<BookChapterPickerProps> = ({
           ]}>
           {item}
         </Text>
-      </TouchableOpacity>
+      </Button>
     );
   };
 
   const renderChapterItem = ({item}: {item: number}) => {
     const isSelected = item === currentChapter && selectedBook === currentBook;
     return (
-      <TouchableOpacity
+      <Button
         style={[styles.chapterItem, isSelected && styles.chapterItemSelected]}
         onPress={() => handleChapterSelect(item)}>
         <Text
@@ -99,7 +99,7 @@ export const BookChapterPicker: React.FC<BookChapterPickerProps> = ({
           ]}>
           {item}
         </Text>
-      </TouchableOpacity>
+      </Button>
     );
   };
 
@@ -119,14 +119,14 @@ export const BookChapterPicker: React.FC<BookChapterPickerProps> = ({
                   {selectedBook && !bookOnly ? 'Select Chapter' : 'Select Book'}
                 </Text>
                 {selectedBook && !bookOnly && (
-                  <TouchableOpacity
+                  <Button
                     style={styles.backButton}
                     onPress={() => setSelectedBook(null)}>
                     <View style={styles.backButtonContent}>
                       <ArrowLeftIcon size={16} color={theme.colors.primary} />
                       <Text style={styles.backButtonText}>Back</Text>
                     </View>
-                  </TouchableOpacity>
+                  </Button>
                 )}
               </View>
 

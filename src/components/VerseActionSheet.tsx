@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   Modal,
-  TouchableOpacity,
   TouchableWithoutFeedback,
   Animated,
   TextInput,
 } from 'react-native';
+import {Button} from './Button';
 import {BibleVerse} from '../types';
 import {useTheme} from '../theme/useTheme';
 import {useVerseScheduling} from '../hooks/useVerseScheduling';
@@ -171,7 +171,7 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
               <Text style={styles.reference}>{verse.reference}</Text>
 
               <View style={styles.optionsContainer}>
-                <TouchableOpacity
+                <Button
                   style={[
                     styles.option,
                     isTodayPastDue() && styles.optionDisabled
@@ -184,37 +184,37 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
                   ]}>
                     Schedule for Today
                   </Text>
-                </TouchableOpacity>
+                </Button>
 
-                <TouchableOpacity
+                <Button
                   style={styles.option}
                   onPress={() => handleSchedule(1)}>
                   <Text style={styles.optionText}>Schedule for Tomorrow</Text>
-                </TouchableOpacity>
+                </Button>
 
-                <TouchableOpacity
+                <Button
                   style={styles.option}
                   onPress={() => handleSchedule(7)}>
                   <Text style={styles.optionText}>Schedule for Next Week</Text>
-                </TouchableOpacity>
+                </Button>
 
-                <TouchableOpacity
+                <Button
                   style={styles.option}
                   onPress={handleCustomSchedule}>
                   <Text style={styles.optionText}>Schedule for Specific Date & Time</Text>
-                </TouchableOpacity>
+                </Button>
 
                 <View style={styles.divider} />
 
-                <TouchableOpacity style={styles.option} onPress={handleCopy}>
+                <Button style={styles.option} onPress={handleCopy}>
                   <Text style={styles.optionText}>Copy Verse</Text>
-                </TouchableOpacity>
+                </Button>
 
-                <TouchableOpacity
+                <Button
                   style={[styles.option, styles.cancelOption]}
                   onPress={onClose}>
                   <Text style={styles.cancelText}>Cancel</Text>
-                </TouchableOpacity>
+                </Button>
               </View>
             </Animated.View>
           </TouchableWithoutFeedback>
@@ -236,7 +236,7 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
                 <View style={styles.dateTimeSection}>
                   <Text style={styles.dateTimeLabel}>Date</Text>
                   <View style={styles.datePickerRow}>
-                    <TouchableOpacity
+                    <Button
                       style={styles.dateButton}
                       onPress={() => {
                         const newDate = new Date(selectedDate);
@@ -244,7 +244,7 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
                         setSelectedDate(newDate);
                       }}>
                       <Text style={styles.dateButtonText}>−</Text>
-                    </TouchableOpacity>
+                    </Button>
                     <View style={styles.dateDisplay}>
                       <Text style={styles.dateDisplayText}>
                         {selectedDate.toLocaleDateString('en-US', {
@@ -255,7 +255,7 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
                         })}
                       </Text>
                     </View>
-                    <TouchableOpacity
+                    <Button
                       style={styles.dateButton}
                       onPress={() => {
                         const newDate = new Date(selectedDate);
@@ -263,7 +263,7 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
                         setSelectedDate(newDate);
                       }}>
                       <Text style={styles.dateButtonText}>+</Text>
-                    </TouchableOpacity>
+                    </Button>
                   </View>
                 </View>
 
@@ -303,16 +303,16 @@ export const VerseActionSheet: React.FC<VerseActionSheetProps> = ({
                 </View>
 
                 <View style={styles.dateTimePickerButtons}>
-                  <TouchableOpacity
+                  <Button
                     style={[styles.dateTimeButton, styles.cancelDateTimeButton]}
                     onPress={() => setShowDateTimePicker(false)}>
                     <Text style={styles.cancelDateTimeText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                  </Button>
+                  <Button
                     style={[styles.dateTimeButton, styles.confirmDateTimeButton]}
                     onPress={handleConfirmCustomSchedule}>
                     <Text style={styles.confirmDateTimeText}>Schedule</Text>
-                  </TouchableOpacity>
+                  </Button>
                 </View>
               </View>
             </TouchableWithoutFeedback>
